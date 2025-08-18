@@ -12,5 +12,4 @@ type Course struct {
 	Topics         []string `json:"topics" gorm:"type:text[];not null;default:'{}'"`
 	Price          float64  `json:"price" gorm:"type:numeric(10,2);not null"`
 	ThumbnailImage string   `json:"thumbnail_image" gorm:"size:255"`
-	Modules        []Module `json:"modules" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }
