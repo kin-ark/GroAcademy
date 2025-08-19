@@ -1,5 +1,11 @@
 package models
 
+import (
+	"mime/multipart"
+
+	"github.com/lib/pq"
+)
+
 type RegisterInput struct {
 	FirstName       string `json:"first_name" binding:"required"`
 	LastName        string `json:"last_name" binding:"required"`
@@ -12,4 +18,13 @@ type RegisterInput struct {
 type LoginInput struct {
 	Identifier string `json:"identifier" binding:"required"`
 	Password   string `json:"password" binding:"required"`
+}
+
+type PostCourseFormInput struct {
+	Title          string                `form:"title" binding:"required"`
+	Description    string                `form:"description" binding:"required"`
+	Instructor     string                `form:"instructor" binding:"required"`
+	Topics         pq.StringArray        `form:"topics" binding:"required"`
+	Price          float64               `form:"price" binding:"required"`
+	ThumbnailImage *multipart.FileHeader `form:"thumbnail_image"`
 }
