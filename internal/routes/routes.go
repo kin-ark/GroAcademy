@@ -14,6 +14,10 @@ func RegisterRoutes(r *gin.Engine) {
 	authService := services.NewAuthService(userRepo)
 	authController := controllers.NewAuthController(authService)
 
+	courseRepo := repositories.NewCourseRepository()
+	courseService := services.NewCourseService(courseRepo)
+	courseController := controllers.NewCourseController(courseService)
+
 	api := r.Group("/api")
 	{
 		// Auth Route
@@ -25,7 +29,7 @@ func RegisterRoutes(r *gin.Engine) {
 		}
 
 		// CRUD Course Route
-		// api.POST("/courses", controllers.PostCourses)
+		api.POST("/courses", courseController.PostCourse)
 		// api.GET("/courses", controllers.GetCourses)
 		// api.GET("/courses/:id", controllers.GetCourseByID)
 		// api.PUT("/courses/:id", controllers.PutCourseByID)

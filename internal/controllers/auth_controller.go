@@ -22,7 +22,7 @@ func (authController *AuthController) Register(c *gin.Context) {
 	if err := c.ShouldBindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "error",
-			"message": "There's something wrong with the body",
+			"message": "Bad Request",
 			"data":    nil,
 		})
 		return
