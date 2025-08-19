@@ -17,6 +17,8 @@ services:
 
   app:
     build: .
+    volumes:
+      - uploads_data:/app/uploads
     ports:
       - "8080:8080"
     depends_on:
@@ -28,3 +30,4 @@ services:
 
 volumes:
   pgdata: {}
+  uploads_data: 
