@@ -29,13 +29,17 @@ func RegisterRoutes(r *gin.Engine) {
 		}
 
 		// CRUD Course Route
-		api.POST("/courses", courseController.PostCourse)
-		api.GET("/courses", courseController.GetAllCourses)
-		api.GET("/courses/:id", courseController.GetCourseByID)
-		api.PUT("/courses/:id", courseController.PutCourse)
-		api.DELETE("/courses/:id", courseController.DeleteCourseByID)
-		// api.POST("/courses/:id/buy", controllers.BuyCourse)
-		// api.GET("/courses/my-courses", controllers.GetUserCourse)
+		courses := api.Group("/courses")
+		courses.Use(middlewares.RequireAuth)
+		{
+			courses.POST("", middlewares.RequireAdmin, courseController.PostCourse)
+			courses.GET("", courseController.GetAllCourses)
+			courses.GET("/:id", courseController.GetCourseByID)
+			courses.PUT("/:id", middlewares.RequireAdmin, courseController.PutCourse)
+			courses.DELETE("/:id", middlewares.RequireAdmin, courseController.DeleteCourseByID)
+			// courses.POST("/:id/buy", courseController.BuyCourse)
+			// courses.GET("/my-courses", courseController.GetUserCourses)
+		}
 
 		// CRUD Module Route
 		// api.POST("/courses/:courseId/modules", controllers.PostModules)

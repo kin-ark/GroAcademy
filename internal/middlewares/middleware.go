@@ -58,3 +58,20 @@ func RequireAuth(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 	}
 }
+
+func RequireAdmin(c *gin.Context) {
+	userI, exists := c.Get("user")
+	if !exists {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	user := userI.(models.User)
+
+	if user.Role != "admin" {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+		return
+	}
+
+	c.Next()
+}
