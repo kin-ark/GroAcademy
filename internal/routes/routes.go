@@ -3,6 +3,7 @@ package routes
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/kin-ark/GroAcademy/internal/controllers"
+	"github.com/kin-ark/GroAcademy/internal/middlewares"
 	"github.com/kin-ark/GroAcademy/internal/repositories"
 	"github.com/kin-ark/GroAcademy/internal/services"
 )
@@ -12,7 +13,7 @@ func RegisterRoutes(r *gin.Engine) {
 	userRepo := repositories.NewUserRepository()
 	authService := services.NewAuthService(userRepo)
 	authController := controllers.NewAuthController(authService)
-	
+
 	api := r.Group("/api")
 	{
 		// Auth Route
@@ -20,7 +21,7 @@ func RegisterRoutes(r *gin.Engine) {
 		{
 			auth.POST("/login", authController.Login)
 			auth.POST("/register", authController.Register)
-			// auth.GET("/self", controllers.GetSelf)
+			auth.GET("/self", middlewares.RequireAuth, authController.GetSelf)
 		}
 
 		// CRUD Course Route

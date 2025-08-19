@@ -89,3 +89,30 @@ func (authController *AuthController) Login(c *gin.Context) {
 		},
 	})
 }
+
+func (authController *AuthController) GetSelf(c *gin.Context) {
+	user, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"status":  "error",
+			"message": "Error: Unauthorized",
+			"data":    nil,
+		})
+		return
+	}
+
+	u := user.(models.User)
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Request success",
+		"data": gin.H{
+			"id":         u.ID,
+			"username":   u.Username,
+			"first_name": u.FirstName,
+			"last_name":  u.LastName,
+			"email":      u.Email,
+			"balance":    u.Balance,
+		},
+	})
+}
