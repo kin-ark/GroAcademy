@@ -54,22 +54,31 @@ func (authController *AuthController) Register(c *gin.Context) {
 func (authController *AuthController) Login(c *gin.Context) {
 	var input models.LoginInput
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "invalid request body",
+			"data":    nil,
+		})
 		return
 	}
 
 	token, username, err := authController.service.LoginUser(input)
 	if err != nil {
 		if errors.Is(err, services.ErrInvalidCredentials) {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"status":  "error",
+				"message": err.Error(),
+				"data":    nil,
+			})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "An internal error occurred"})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "An internal error occured",
+			"data":    nil,
+		})
 		return
 	}
-
-	c.SetSameSite(http.SameSiteLaxMode)
-	c.SetCookie("Authorization", token, 3600, "", "", true, true)
 
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "success",
