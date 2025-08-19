@@ -1,6 +1,8 @@
 package services
 
 import (
+	"math"
+
 	"github.com/gin-gonic/gin"
 	"github.com/kin-ark/GroAcademy/internal/models"
 	"github.com/kin-ark/GroAcademy/internal/repositories"
@@ -8,6 +10,8 @@ import (
 
 type CourseService interface {
 	CreateCourse(*gin.Context, models.PostCourseFormInput) (*models.Course, error)
+	GetAllCourses(query models.CoursesQuery) ([]models.CourseWithModulesCount, models.PaginationResponse, error)
+	BuildCourseResponses(courses []models.CourseWithModulesCount) []models.CourseResponse
 }
 
 type courseService struct {
@@ -35,4 +39,47 @@ func (s *courseService) CreateCourse(c *gin.Context, input models.PostCourseForm
 	}
 
 	return &course, nil
+}
+
+func (s *courseService) GetAllCourses(query models.CoursesQuery) ([]models.CourseWithModulesCount, models.PaginationResponse, error) {
+	query.Normalize()
+
+	courses, totalItems, err := s.courseRepo.GetAllCourses(query)
+	if err != nil {
+		return nil, models.PaginationResponse{}, err
+	}
+
+	totalPages := int(math.Ceil(float64(totalItems) / float64(query.Limit)))
+	if query.Page > totalPages && totalPages > 0 {
+		query.Page = totalPages
+	}
+
+	pagination := models.PaginationResponse{
+		CurrentPage: query.Page,
+		TotalPages:  totalPages,
+		TotalItems:  int(totalItems),
+	}
+
+	return courses, pagination, nil
+}
+
+func (s *courseService) BuildCourseResponses(courses []models.CourseWithModulesCount) []models.CourseResponse {
+	var responses []models.CourseResponse
+
+	for _, c := range courses {
+		responses = append(responses, models.CourseResponse{
+			ID:             c.Course.ID,
+			Title:          c.Course.Title,
+			Description:    c.Course.Description,
+			Instructor:     c.Course.Instructor,
+			Topics:         c.Course.Topics,
+			Price:          c.Course.Price,
+			ThumbnailImage: &c.Course.ThumbnailImage,
+			TotalModules:   int(c.ModulesCount),
+			CreatedAt:      c.Course.CreatedAt,
+			UpdatedAt:      c.Course.UpdatedAt,
+		})
+	}
+
+	return responses
 }

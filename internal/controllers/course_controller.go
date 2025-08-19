@@ -16,7 +16,7 @@ func NewCourseController(s services.CourseService) CourseController {
 	return CourseController{service: s}
 }
 
-func (courseController *CourseController) PostCourse(c *gin.Context) {
+func (cc *CourseController) PostCourse(c *gin.Context) {
 	var input models.PostCourseFormInput
 	if err := c.ShouldBind(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -27,7 +27,7 @@ func (courseController *CourseController) PostCourse(c *gin.Context) {
 		return
 	}
 
-	result, err := courseController.service.CreateCourse(c, input)
+	result, err := cc.service.CreateCourse(c, input)
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -52,5 +52,36 @@ func (courseController *CourseController) PostCourse(c *gin.Context) {
 		},
 		"message": "Post course success",
 		"status":  "success",
+	})
+}
+
+func (cc *CourseController) GetAllCourses(c *gin.Context) {
+	var query models.CoursesQuery
+	if err := c.ShouldBindQuery(&query); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Bad Request",
+			"data":    nil,
+		})
+		return
+	}
+
+	courses, pagination, err := cc.service.GetAllCourses(query)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+			"data":    nil,
+		})
+		return
+	}
+
+	coursesResponse := cc.service.BuildCourseResponses(courses)
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":     "success",
+		"message":    "Successfully get all courses",
+		"data":       coursesResponse,
+		"pagination": pagination,
 	})
 }

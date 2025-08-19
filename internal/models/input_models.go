@@ -28,3 +28,21 @@ type PostCourseFormInput struct {
 	Price          float64               `form:"price" binding:"required"`
 	ThumbnailImage *multipart.FileHeader `form:"thumbnail_image"`
 }
+
+type CoursesQuery struct {
+	Q     string `form:"q"`
+	Page  int    `form:"page"`
+	Limit int    `form:"limit"`
+}
+
+func (q *CoursesQuery) Normalize() {
+	if q.Page < 1 {
+		q.Page = 1
+	}
+	if q.Limit <= 0 {
+		q.Limit = 15
+	}
+	if q.Limit > 50 {
+		q.Limit = 50
+	}
+}

@@ -1,0 +1,28 @@
+package models
+
+import "time"
+
+type APIResponse struct {
+	Status  string      `json:"status"`
+	Message string      `json:"message"`
+	Data    interface{} `json:"data,omitempty"`
+}
+
+type PaginationResponse struct {
+	CurrentPage int `json:"current_page"`
+	TotalPages  int `json:"total_pages"`
+	TotalItems  int `json:"total_items"`
+}
+
+type CourseResponse struct {
+	ID             uint      `json:"id"`
+	Title          string    `json:"title"`
+	Description    string    `json:"description"`
+	Instructor     string    `json:"instructor"`
+	Topics         []string  `json:"topics"`
+	Price          float64   `json:"price"`
+	ThumbnailImage *string   `json:"thumbnail_image"`
+	TotalModules   int       `json:"total_modules"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
+}

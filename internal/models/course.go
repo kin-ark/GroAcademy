@@ -14,3 +14,8 @@ type Course struct {
 	Price          float64        `json:"price" gorm:"type:numeric(10,2);not null"`
 	ThumbnailImage string         `json:"thumbnail_image" gorm:"size:255"`
 }
+
+type CourseWithModulesCount struct {
+	Course
+	ModulesCount int64 `json:"modules_count"`
+}
