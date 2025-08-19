@@ -2,6 +2,7 @@ package services
 
 import (
 	"math"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kin-ark/GroAcademy/internal/models"
@@ -9,7 +10,8 @@ import (
 )
 
 type CourseService interface {
-	CreateCourse(*gin.Context, models.PostCourseFormInput) (*models.Course, error)
+	CreateCourse(*gin.Context, models.CourseFormInput) (*models.Course, error)
+	EditCourse(c *gin.Context, id uint, input models.CourseFormInput) (*models.Course, error)
 	GetAllCourses(query models.CoursesQuery) ([]models.CourseWithModulesCount, models.PaginationResponse, error)
 	GetCourseByID(id uint) (*models.Course, error)
 	BuildCourseResponses(courses []models.CourseWithModulesCount) []models.CourseResponse
@@ -24,8 +26,7 @@ func NewCourseService(r repositories.CourseRepository) CourseService {
 	return &courseService{courseRepo: r}
 }
 
-func (s *courseService) CreateCourse(c *gin.Context, input models.PostCourseFormInput) (*models.Course, error) {
-
+func (s *courseService) CreateCourse(c *gin.Context, input models.CourseFormInput) (*models.Course, error) {
 	var course models.Course
 	if input.ThumbnailImage != nil {
 		path := "uploads/thumbnails/" + input.ThumbnailImage.Filename
@@ -92,4 +93,37 @@ func (s *courseService) GetCourseByID(id uint) (*models.Course, error) {
 
 func (s *courseService) GetModulesByCourse(id uint) ([]models.Module, int64, error) {
 	return s.courseRepo.FindModulesByCourseID(id)
+}
+
+func (s *courseService) EditCourse(c *gin.Context, id uint, input models.CourseFormInput) (*models.Course, error) {
+	existing, err := s.courseRepo.FindById(id)
+	if err != nil {
+		return nil, err
+	}
+
+	if existing.ThumbnailImage != "" {
+		_ = os.Remove(existing.ThumbnailImage)
+	}
+
+	if input.ThumbnailImage != nil {
+		path := "uploads/thumbnails/" + input.ThumbnailImage.Filename
+		if err := c.SaveUploadedFile(input.ThumbnailImage, path); err != nil {
+			return nil, err
+		}
+		existing.ThumbnailImage = path
+	} else {
+		existing.ThumbnailImage = ""
+	}
+
+	existing.Title = input.Title
+	existing.Description = input.Description
+	existing.Instructor = input.Instructor
+	existing.Topics = input.Topics
+	existing.Price = input.Price
+
+	if err := s.courseRepo.Update(existing); err != nil {
+		return nil, err
+	}
+
+	return existing, nil
 }

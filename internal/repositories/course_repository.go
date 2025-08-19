@@ -10,6 +10,7 @@ import (
 
 type CourseRepository interface {
 	Create(course *models.Course) error
+	Update(course *models.Course) error
 	FindById(id uint) (*models.Course, error)
 	GetAllCourses(query models.CoursesQuery) ([]models.CourseWithModulesCount, int64, error)
 	FindModulesByCourseID(id uint) ([]models.Module, int64, error)
@@ -25,6 +26,12 @@ func NewCourseRepository() CourseRepository {
 
 func (r *courseRepository) Create(course *models.Course) error {
 	return r.db.Create(course).Error
+}
+
+func (r *courseRepository) Update(course *models.Course) error {
+	return r.db.Model(&models.Course{}).
+		Where("id = ?", course.ID).
+		Updates(course).Error
 }
 
 func (r *courseRepository) FindById(id uint) (*models.Course, error) {

@@ -20,7 +20,7 @@ type LoginInput struct {
 	Password   string `json:"password" binding:"required"`
 }
 
-type PostCourseFormInput struct {
+type CourseFormInput struct {
 	Title          string                `form:"title" binding:"required"`
 	Description    string                `form:"description" binding:"required"`
 	Instructor     string                `form:"instructor" binding:"required"`

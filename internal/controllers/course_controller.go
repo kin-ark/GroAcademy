@@ -18,7 +18,7 @@ func NewCourseController(s services.CourseService) CourseController {
 }
 
 func (cc *CourseController) PostCourse(c *gin.Context) {
-	var input models.PostCourseFormInput
+	var input models.CourseFormInput
 	if err := c.ShouldBind(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "error",
@@ -135,5 +135,55 @@ func (cc *CourseController) GetCourseByID(c *gin.Context) {
 		"status":  "success",
 		"message": "Successfully retrieved course",
 		"data":    courseResponse,
+	})
+}
+
+func (cc *CourseController) PutCourse(c *gin.Context) {
+	idParam := c.Param("id")
+	id, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Invalid course ID",
+			"data":    nil,
+		})
+		return
+	}
+
+	var input models.CourseFormInput
+	if err := c.ShouldBind(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Bad Request",
+			"data":    nil,
+		})
+		return
+	}
+
+	result, err := cc.service.EditCourse(c, uint(id), input)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+			"data":    nil,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"id":              result.ID,
+			"title":           result.Title,
+			"description":     result.Description,
+			"instructor":      result.Instructor,
+			"topics":          result.Topics,
+			"price":           result.Price,
+			"thumbnail_image": result.ThumbnailImage,
+			"created_at":      result.CreatedAt,
+			"updated_at":      result.UpdatedAt,
+		},
+		"message": "Post course success",
+		"status":  "success",
 	})
 }
