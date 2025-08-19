@@ -11,7 +11,9 @@ import (
 type CourseService interface {
 	CreateCourse(*gin.Context, models.PostCourseFormInput) (*models.Course, error)
 	GetAllCourses(query models.CoursesQuery) ([]models.CourseWithModulesCount, models.PaginationResponse, error)
+	GetCourseByID(id uint) (*models.Course, error)
 	BuildCourseResponses(courses []models.CourseWithModulesCount) []models.CourseResponse
+	GetModulesByCourse(id uint) ([]models.Module, int64, error)
 }
 
 type courseService struct {
@@ -82,4 +84,12 @@ func (s *courseService) BuildCourseResponses(courses []models.CourseWithModulesC
 	}
 
 	return responses
+}
+
+func (s *courseService) GetCourseByID(id uint) (*models.Course, error) {
+	return s.courseRepo.FindById(id)
+}
+
+func (s *courseService) GetModulesByCourse(id uint) ([]models.Module, int64, error) {
+	return s.courseRepo.FindModulesByCourseID(id)
 }

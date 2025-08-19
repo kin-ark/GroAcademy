@@ -31,7 +31,7 @@ func RegisterRoutes(r *gin.Engine) {
 		// CRUD Course Route
 		api.POST("/courses", courseController.PostCourse)
 		api.GET("/courses", courseController.GetAllCourses)
-		// api.GET("/courses/:id", controllers.GetCourseByID)
+		api.GET("/courses/:id", courseController.GetCourseByID)
 		// api.PUT("/courses/:id", controllers.PutCourseByID)
 		// api.DELETE("/courses/:id", controllers.DeleteCourseByID)
 		// api.POST("/courses/:id/buy", controllers.BuyCourse)

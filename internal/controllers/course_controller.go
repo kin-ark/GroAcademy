@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kin-ark/GroAcademy/internal/models"
@@ -83,5 +84,56 @@ func (cc *CourseController) GetAllCourses(c *gin.Context) {
 		"message":    "Successfully get all courses",
 		"data":       coursesResponse,
 		"pagination": pagination,
+	})
+}
+
+func (cc *CourseController) GetCourseByID(c *gin.Context) {
+	idParam := c.Param("id")
+	id, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Invalid course ID",
+			"data":    nil,
+		})
+		return
+	}
+
+	course, err := cc.service.GetCourseByID(uint(id))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"status":  "error",
+			"message": "Course not found",
+			"data":    nil,
+		})
+		return
+	}
+	_, moduleCount, err := cc.service.GetModulesByCourse(course.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "Failed to fetch modules count",
+			"data":    nil,
+		})
+		return
+	}
+
+	courseResponse := models.CourseResponse{
+		ID:             course.ID,
+		Title:          course.Title,
+		Description:    course.Description,
+		Instructor:     course.Instructor,
+		Topics:         course.Topics,
+		Price:          course.Price,
+		ThumbnailImage: &course.ThumbnailImage,
+		TotalModules:   int(moduleCount),
+		CreatedAt:      course.CreatedAt,
+		UpdatedAt:      course.UpdatedAt,
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Successfully retrieved course",
+		"data":    courseResponse,
 	})
 }
