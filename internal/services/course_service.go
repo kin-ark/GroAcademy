@@ -16,6 +16,7 @@ type CourseService interface {
 	GetCourseByID(id uint) (*models.Course, error)
 	BuildCourseResponses(courses []models.CourseWithModulesCount) []models.CourseResponse
 	GetModulesByCourse(id uint) ([]models.Module, int64, error)
+	DeleteCourseByID(id uint) error
 }
 
 type courseService struct {
@@ -125,5 +126,29 @@ func (s *courseService) EditCourse(c *gin.Context, id uint, input models.CourseF
 		return nil, err
 	}
 
-	return existing, nil
+	updated, err := s.courseRepo.FindById(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return updated, nil
+}
+
+func (s *courseService) DeleteCourseByID(id uint) error {
+	existing, err := s.courseRepo.FindById(id)
+	if err != nil {
+		return err
+	}
+
+	thumbnailImagePath := existing.ThumbnailImage
+
+	if err := s.courseRepo.Delete(existing); err != nil {
+		return err
+	}
+
+	if thumbnailImagePath != "" {
+		_ = os.Remove(existing.ThumbnailImage)
+	}
+
+	return nil
 }
