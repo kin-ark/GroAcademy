@@ -253,3 +253,42 @@ func (cc *CourseController) BuyCourse(c *gin.Context) {
 		"data":    res,
 	})
 }
+
+func (cc *CourseController) GetMyCourses(c *gin.Context) {
+	var query models.CoursesQuery
+	if err := c.ShouldBindQuery(&query); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Bad Request",
+			"data":    nil,
+		})
+		return
+	}
+
+	user, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Bad Request",
+			"data":    nil,
+		})
+		return
+	}
+	u := user.(models.User)
+
+	res, err := cc.service.GetCoursesByUser(&u)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Bad Request",
+			"data":    nil,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Request success",
+		"data":    res,
+	})
+}

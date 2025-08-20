@@ -18,7 +18,7 @@ func NewModuleController(s services.ModuleService) ModuleController {
 }
 
 func (mc *ModuleController) PostModule(c *gin.Context) {
-	idParam := c.Param("courseId")
+	idParam := c.Param("id")
 	id, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{

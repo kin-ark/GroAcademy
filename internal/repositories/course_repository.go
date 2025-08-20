@@ -18,6 +18,7 @@ type CourseRepository interface {
 	HasPurchasedCourse(courseId uint, userId uint) (bool, error)
 	FindModulesWithProgress(courseID, userID uint) ([]models.ModuleWithIsCompleted, error)
 	BuyCourse(user *models.User, course *models.Course) (*models.Purchase, error)
+	GetCoursesByUser(user models.User) ([]models.MyCoursesResponse, error)
 }
 
 type courseRepository struct {
@@ -151,5 +152,48 @@ func (r *courseRepository) BuyCourse(user *models.User, course *models.Course) (
 		return nil, err
 	}
 
+	var modules []models.Module
+	if err := r.db.Where("course_id = ?", course.ID).Find(&modules).Error; err != nil {
+		return nil, err
+	}
+
+	progresses := make([]models.ModuleProgress, len(modules))
+	for i, m := range modules {
+		progresses[i] = models.ModuleProgress{
+			UserID:      user.ID,
+			ModuleID:    m.ID,
+			IsCompleted: false,
+		}
+	}
+
+	if len(progresses) > 0 {
+		if err := r.db.Create(&progresses).Error; err != nil {
+			return nil, err
+		}
+	}
+
 	return &purchase, nil
+}
+
+func (r *courseRepository) GetCoursesByUser(user models.User) ([]models.MyCoursesResponse, error) {
+	var courses []models.MyCoursesResponse
+	base := r.db.Model(&models.Course{})
+	db := base.Select(
+		"courses.*",
+		"purchases.created_at AS purchased_at",
+		`CASE 
+			WHEN COUNT(modules.id) = 0 THEN 0
+			ELSE (SUM(CASE WHEN module_progresses.is_completed THEN 1 ELSE 0 END) * 100.0 / COUNT(modules.id))
+		END AS progress_percentage`).
+		Joins("JOIN purchases ON purchases.course_id = courses.id").
+		Joins("LEFT JOIN modules ON modules.course_id = courses.id").
+		Joins("LEFT JOIN module_progresses ON module_progresses.module_id = modules.id AND module_progresses.user_id = ?", user.ID).
+		Where("purchases.user_id = ?", user.ID).
+		Group("courses.id, purchases.created_at")
+
+	if err := db.Scan(&courses).Error; err != nil {
+		return nil, err
+	}
+
+	return courses, nil
 }

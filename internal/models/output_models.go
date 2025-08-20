@@ -44,3 +44,9 @@ type BuyCourseResponse struct {
 	UserBalance   float64 `json:"user_balance"`
 	TransactionID uint    `json:"transaction_id"`
 }
+
+type MyCoursesResponse struct {
+	Course
+	ProgressPercentage float64   `json:"progress_percentage"`
+	PurchasedAt        time.Time `json:"purchased_at"`
+}

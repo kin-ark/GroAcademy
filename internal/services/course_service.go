@@ -20,6 +20,7 @@ type CourseService interface {
 	GetModulesByCourse(id uint) ([]models.Module, int64, error)
 	DeleteCourseByID(id uint) error
 	BuyCourse(id uint, user *models.User) (*models.BuyCourseResponse, error)
+	GetCoursesByUser(user *models.User) ([]models.MyCoursesResponse, error)
 }
 
 type courseService struct {
@@ -186,4 +187,8 @@ func (s *courseService) BuyCourse(id uint, user *models.User) (*models.BuyCourse
 		}
 		return &res, nil
 	}
+}
+
+func (s *courseService) GetCoursesByUser(user *models.User) ([]models.MyCoursesResponse, error) {
+	return s.courseRepo.GetCoursesByUser(*user)
 }
