@@ -46,3 +46,10 @@ func (q *CoursesQuery) Normalize() {
 		q.Limit = 50
 	}
 }
+
+type ModuleFormInput struct {
+	Title        string                `form:"title" binding:"required"`
+	Description  string                `form:"description" binding:"required"`
+	PDFContent   *multipart.FileHeader `form:"pdf_content"`
+	VideoContent *multipart.FileHeader `form:"video_content"`
+}
