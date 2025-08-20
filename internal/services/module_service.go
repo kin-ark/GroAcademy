@@ -1,6 +1,8 @@
 package services
 
 import (
+	"os"
+
 	"github.com/gin-gonic/gin"
 	"github.com/kin-ark/GroAcademy/internal/models"
 	"github.com/kin-ark/GroAcademy/internal/repositories"
@@ -8,6 +10,8 @@ import (
 
 type ModuleService interface {
 	CreateModule(*gin.Context, models.ModuleFormInput, uint) (*models.Module, error)
+	EditModule(*gin.Context, models.ModuleFormInput, uint) (*models.Module, error)
+	DeleteModuleByID(uint) error
 }
 
 type moduleService struct {
@@ -62,4 +66,77 @@ func (s *moduleService) CreateModule(c *gin.Context, input models.ModuleFormInpu
 	}
 
 	return &module, nil
+}
+
+func (s *moduleService) EditModule(c *gin.Context, input models.ModuleFormInput, id uint) (*models.Module, error) {
+	existing, err := s.moduleRepo.FindById(id)
+	if err != nil {
+		return nil, err
+	}
+
+	if existing.PDFContent != "" {
+		_ = os.Remove(existing.PDFContent)
+	}
+
+	if existing.VideoContent != "" {
+		_ = os.Remove(existing.VideoContent)
+	}
+
+	if input.PDFContent != nil {
+		path := "uploads/thumbnails/" + input.PDFContent.Filename
+		if err := c.SaveUploadedFile(input.PDFContent, path); err != nil {
+			return nil, err
+		}
+		existing.PDFContent = path
+	} else {
+		existing.PDFContent = ""
+	}
+
+	if input.VideoContent != nil {
+		path := "uploads/thumbnails/" + input.VideoContent.Filename
+		if err := c.SaveUploadedFile(input.VideoContent, path); err != nil {
+			return nil, err
+		}
+		existing.VideoContent = path
+	} else {
+		existing.VideoContent = ""
+	}
+
+	existing.Title = input.Title
+	existing.Description = input.Description
+
+	if err := s.moduleRepo.Update(existing); err != nil {
+		return nil, err
+	}
+
+	updated, err := s.moduleRepo.FindById(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return updated, nil
+}
+
+func (s *moduleService) DeleteModuleByID(id uint) error {
+	existing, err := s.moduleRepo.FindById(id)
+	if err != nil {
+		return err
+	}
+
+	pdfContentPath := existing.PDFContent
+	videoContentPath := existing.VideoContent
+
+	if err := s.moduleRepo.Delete(existing); err != nil {
+		return err
+	}
+
+	if pdfContentPath != "" {
+		_ = os.Remove(existing.PDFContent)
+	}
+
+	if videoContentPath != "" {
+		_ = os.Remove(existing.VideoContent)
+	}
+
+	return nil
 }
