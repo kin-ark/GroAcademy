@@ -38,3 +38,9 @@ type ModuleResponse struct {
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 }
+
+type BuyCourseResponse struct {
+	CourseID      uint    `json:"course_id"`
+	UserBalance   float64 `json:"user_balance"`
+	TransactionID uint    `json:"transaction_id"`
+}

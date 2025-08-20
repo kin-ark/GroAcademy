@@ -17,6 +17,7 @@ type CourseRepository interface {
 	FindModulesByCourseID(id uint) ([]models.Module, int64, error)
 	HasPurchasedCourse(courseId uint, userId uint) (bool, error)
 	FindModulesWithProgress(courseID, userID uint) ([]models.ModuleWithIsCompleted, error)
+	BuyCourse(user *models.User, course *models.Course) (*models.Purchase, error)
 }
 
 type courseRepository struct {
@@ -133,4 +134,22 @@ func (r *courseRepository) FindModulesWithProgress(courseID, userID uint) ([]mod
 	}
 
 	return modules, nil
+}
+
+func (r *courseRepository) BuyCourse(user *models.User, course *models.Course) (*models.Purchase, error) {
+	user.Balance -= course.Price
+	if err := r.db.Save(user).Error; err != nil {
+		return nil, err
+	}
+
+	purchase := models.Purchase{
+		UserID:   user.ID,
+		CourseID: course.ID,
+		Amount:   course.Price,
+	}
+	if err := r.db.Create(&purchase).Error; err != nil {
+		return nil, err
+	}
+
+	return &purchase, nil
 }

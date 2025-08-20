@@ -41,7 +41,7 @@ func RegisterRoutes(r *gin.Engine) {
 			courses.GET("/:id", courseController.GetCourseByID)
 			courses.PUT("/:id", middlewares.RequireAdmin, courseController.PutCourse)
 			courses.DELETE("/:id", middlewares.RequireAdmin, courseController.DeleteCourseByID)
-			// courses.POST("/:id/buy", courseController.BuyCourse)
+			courses.POST("/:id/buy", courseController.BuyCourse)
 			// courses.GET("/my-courses", courseController.GetUserCourses)
 
 			// CRUD Module

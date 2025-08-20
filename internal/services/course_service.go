@@ -1,6 +1,7 @@
 package services
 
 import (
+	"errors"
 	"math"
 	"os"
 
@@ -17,6 +18,7 @@ type CourseService interface {
 	BuildCourseResponses(courses []models.CourseWithModulesCount) []models.CourseResponse
 	GetModulesByCourse(id uint) ([]models.Module, int64, error)
 	DeleteCourseByID(id uint) error
+	BuyCourse(id uint, user *models.User) (*models.BuyCourseResponse, error)
 }
 
 type courseService struct {
@@ -151,4 +153,36 @@ func (s *courseService) DeleteCourseByID(id uint) error {
 	}
 
 	return nil
+}
+
+func (s *courseService) BuyCourse(id uint, user *models.User) (*models.BuyCourseResponse, error) {
+	purchased, err := s.courseRepo.HasPurchasedCourse(id, user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	if purchased {
+		return nil, errors.New(user.Username + "already purchased course: " + string(id))
+	} else {
+		course, err := s.courseRepo.FindById(id)
+		if err != nil {
+			return nil, err
+		}
+
+		if course.Price > user.Balance {
+			return nil, errors.New(user.Username + "balance is not enough to buy this course: " + string(id))
+		}
+
+		transaction, err := s.courseRepo.BuyCourse(user, course)
+		if err != nil {
+			return nil, err
+		}
+
+		res := models.BuyCourseResponse{
+			TransactionID: transaction.ID,
+			CourseID:      id,
+			UserBalance:   user.Balance,
+		}
+		return &res, nil
+	}
 }
