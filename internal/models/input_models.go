@@ -30,12 +30,16 @@ type CourseFormInput struct {
 }
 
 type CoursesQuery struct {
-	Q     string `form:"q"`
-	Page  int    `form:"page"`
-	Limit int    `form:"limit"`
+	Q string `form:"q"`
+	PaginationQuery
 }
 
-func (q *CoursesQuery) Normalize() {
+type PaginationQuery struct {
+	Page  int `form:"page"`
+	Limit int `form:"limit"`
+}
+
+func (q *PaginationQuery) Normalize() {
 	if q.Page < 1 {
 		q.Page = 1
 	}
