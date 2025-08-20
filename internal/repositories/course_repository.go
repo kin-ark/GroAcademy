@@ -15,6 +15,8 @@ type CourseRepository interface {
 	FindById(id uint) (*models.Course, error)
 	GetAllCourses(query models.CoursesQuery) ([]models.CourseWithModulesCount, int64, error)
 	FindModulesByCourseID(id uint) ([]models.Module, int64, error)
+	HasPurchasedCourse(courseId uint, userId uint) (bool, error)
+	FindModulesWithProgress(courseID, userID uint) ([]models.ModuleWithIsCompleted, error)
 }
 
 type courseRepository struct {
@@ -101,4 +103,34 @@ func (r *courseRepository) FindModulesByCourseID(id uint) ([]models.Module, int6
 	}
 
 	return modules, count, nil
+}
+
+func (r *courseRepository) HasPurchasedCourse(courseId uint, userId uint) (bool, error) {
+	var count int64
+
+	err := r.db.Model(&models.Purchase{}).
+		Where("user_id = ? AND course_id = ?", userId, courseId).
+		Count(&count).Error
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
+}
+
+func (r *courseRepository) FindModulesWithProgress(courseID, userID uint) ([]models.ModuleWithIsCompleted, error) {
+	var modules []models.ModuleWithIsCompleted
+
+	err := r.db.Model(&models.Module{}).
+		Select("modules.*, COALESCE(module_progress.is_completed, false) AS completed").
+		Joins("LEFT JOIN module_progress ON module_progress.module_id = modules.id AND module_progress.user_id = ?", userID).
+		Where("modules.course_id = ?", courseID).
+		Order("modules.order ASC").
+		Scan(&modules).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return modules, nil
 }

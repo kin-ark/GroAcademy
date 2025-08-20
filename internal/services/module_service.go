@@ -1,6 +1,7 @@
 package services
 
 import (
+	"errors"
 	"os"
 
 	"github.com/gin-gonic/gin"
@@ -12,6 +13,8 @@ type ModuleService interface {
 	CreateModule(*gin.Context, models.ModuleFormInput, uint) (*models.Module, error)
 	EditModule(*gin.Context, models.ModuleFormInput, uint) (*models.Module, error)
 	DeleteModuleByID(uint) error
+	GetModules(user models.User, courseID uint, q models.PaginationQuery) ([]models.ModuleWithIsCompleted, error)
+	BuildModuleResponses(modules []models.ModuleWithIsCompleted) []models.ModuleResponse
 }
 
 type moduleService struct {
@@ -139,4 +142,60 @@ func (s *moduleService) DeleteModuleByID(id uint) error {
 	}
 
 	return nil
+}
+
+func (s *moduleService) GetModules(user models.User, courseID uint, q models.PaginationQuery) ([]models.ModuleWithIsCompleted, error) {
+	var res []models.ModuleWithIsCompleted
+
+	hasPurchased, err := s.courseRepo.HasPurchasedCourse(courseID, user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	if !hasPurchased {
+		if user.Role != "admin" {
+			return nil, errors.New(user.Username + " has not bought this course!")
+		} else {
+			modules, _, err := s.courseRepo.FindModulesByCourseID(courseID)
+			if err != nil {
+				return nil, err
+			}
+
+			for _, module := range modules {
+				res = append(res, models.ModuleWithIsCompleted{
+					Module:      module,
+					IsCompleted: false,
+				})
+			}
+
+			return res, nil
+		}
+	} else {
+		res, err = s.courseRepo.FindModulesWithProgress(courseID, user.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		return res, nil
+	}
+}
+
+func (s *moduleService) BuildModuleResponses(modules []models.ModuleWithIsCompleted) []models.ModuleResponse {
+	var responses []models.ModuleResponse
+
+	for _, m := range modules {
+		responses = append(responses, models.ModuleResponse{
+			ID:           m.ID,
+			Title:        m.Title,
+			Description:  m.Description,
+			PDFContent:   m.PDFContent,
+			VideoContent: m.VideoContent,
+			Order:        m.Order,
+			IsCompleted:  m.IsCompleted,
+			CreatedAt:    m.CreatedAt,
+			UpdatedAt:    m.UpdatedAt,
+		})
+	}
+
+	return responses
 }

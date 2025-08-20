@@ -142,3 +142,55 @@ func (mc *ModuleController) DeleteModuleByID(c *gin.Context) {
 
 	c.Status(http.StatusNoContent)
 }
+
+func (mc *ModuleController) GetModules(c *gin.Context) {
+	idParam := c.Param("id")
+	id, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Invalid course ID",
+			"data":    nil,
+		})
+		return
+	}
+
+	var query models.PaginationQuery
+	if err := c.ShouldBindQuery(&query); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Bad Request",
+			"data":    nil,
+		})
+		return
+	}
+
+	user, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Bad Request",
+			"data":    nil,
+		})
+		return
+	}
+	u := user.(models.User)
+
+	result, err := mc.service.GetModules(u, uint(id), query)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+			"data":    nil,
+		})
+		return
+	}
+
+	data := mc.service.BuildModuleResponses(result)
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Get Modules success",
+		"data":    data,
+	})
+}

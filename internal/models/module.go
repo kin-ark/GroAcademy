@@ -15,3 +15,8 @@ type Module struct {
 
 	Course Course `gorm:"foreignKey:CourseID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 }
+
+type ModuleWithIsCompleted struct {
+	Module
+	IsCompleted bool `json:"is_completed"`
+}

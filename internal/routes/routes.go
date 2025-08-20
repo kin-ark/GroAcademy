@@ -45,8 +45,8 @@ func RegisterRoutes(r *gin.Engine) {
 			// courses.GET("/my-courses", courseController.GetUserCourses)
 
 			// CRUD Module
-			courses.POST("/:courseId/modules", moduleController.PostModule)
-			// courses.GET("/:courseId/modules", controllers.GetModulesByCourse)
+			courses.POST("/:id/modules", moduleController.PostModule)
+			courses.GET("/:id/modules", moduleController.GetModules)
 			// courses.PATCH("/:courseId/modules/reorder", controllers.ReorderCourseModules)
 			// courses.PATCH("/:courseId/modules/complete", controllers.MarkModuleAsComplete)
 		}

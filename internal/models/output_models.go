@@ -26,3 +26,15 @@ type CourseResponse struct {
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
 }
+
+type ModuleResponse struct {
+	ID           uint      `json:"id"`
+	Title        string    `json:"title"`
+	Description  string    `json:"description"`
+	PDFContent   string    `json:"pdf_content"`
+	VideoContent string    `json:"video_content"`
+	Order        int       `json:"order"`
+	IsCompleted  bool      `json:"is_completed"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}
