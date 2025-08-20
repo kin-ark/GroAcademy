@@ -122,8 +122,8 @@ func (r *courseRepository) FindModulesWithProgress(courseID, userID uint) ([]mod
 	var modules []models.ModuleWithIsCompleted
 
 	err := r.db.Model(&models.Module{}).
-		Select("modules.*, COALESCE(module_progress.is_completed, false) AS completed").
-		Joins("LEFT JOIN module_progress ON module_progress.module_id = modules.id AND module_progress.user_id = ?", userID).
+		Select("modules.*, COALESCE(module_progresses.is_completed, false) AS completed").
+		Joins("LEFT JOIN module_progresses ON module_progresses.module_id = modules.id AND module_progresses.user_id = ?", userID).
 		Where("modules.course_id = ?", courseID).
 		Order("modules.order ASC").
 		Scan(&modules).Error
