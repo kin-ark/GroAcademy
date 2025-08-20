@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"os"
 
@@ -30,14 +31,14 @@ func NewCourseService(r repositories.CourseRepository) CourseService {
 }
 
 func (s *courseService) CreateCourse(c *gin.Context, input models.CourseFormInput) (*models.Course, error) {
-	var course models.Course
+	course := models.Course{Title: input.Title, Description: input.Description, Instructor: input.Instructor, Topics: input.Topics, Price: input.Price}
 	if input.ThumbnailImage != nil {
 		path := "uploads/thumbnails/" + input.ThumbnailImage.Filename
 		err := c.SaveUploadedFile(input.ThumbnailImage, path)
 		if err != nil {
 			return nil, err
 		}
-		course = models.Course{Title: input.Title, Description: input.Description, Instructor: input.Instructor, Topics: input.Topics, Price: input.Price, ThumbnailImage: path}
+		course.ThumbnailImage = path
 	}
 
 	if err := s.courseRepo.Create(&course); err != nil {
@@ -162,7 +163,7 @@ func (s *courseService) BuyCourse(id uint, user *models.User) (*models.BuyCourse
 	}
 
 	if purchased {
-		return nil, errors.New(user.Username + "already purchased course: " + string(id))
+		return nil, errors.New(user.Username + "already purchased course: " + fmt.Sprint(id))
 	} else {
 		course, err := s.courseRepo.FindById(id)
 		if err != nil {
@@ -170,7 +171,7 @@ func (s *courseService) BuyCourse(id uint, user *models.User) (*models.BuyCourse
 		}
 
 		if course.Price > user.Balance {
-			return nil, errors.New(user.Username + "balance is not enough to buy this course: " + string(id))
+			return nil, errors.New(user.Username + "balance is not enough to buy this course: " + fmt.Sprint(id))
 		}
 
 		transaction, err := s.courseRepo.BuyCourse(user, course)
