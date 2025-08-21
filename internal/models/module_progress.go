@@ -1,11 +1,11 @@
 package models
 
-import (
-	"gorm.io/gorm"
-)
+import "time"
 
 type ModuleProgress struct {
-	gorm.Model
+	ID          uint `gorm:"primaryKey"`
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 	UserID      uint   `json:"user_id" gorm:"not null;index"`
 	ModuleID    uint   `json:"module_id" gorm:"not null;index"`
 	IsCompleted bool   `json:"is_completed" gorm:"default:false"`

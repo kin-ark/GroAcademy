@@ -1,12 +1,15 @@
 package models
 
 import (
+	"time"
+
 	"github.com/lib/pq"
-	"gorm.io/gorm"
 )
 
 type Course struct {
-	gorm.Model
+	ID             uint `gorm:"primaryKey"`
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 	Title          string         `json:"title" gorm:"size:200;not null"`
 	Description    string         `json:"description" gorm:"type:text;not null"`
 	Instructor     string         `json:"instructor" gorm:"size:100;not null"`
