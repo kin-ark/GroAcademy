@@ -15,6 +15,7 @@ type ModuleService interface {
 	DeleteModuleByID(uint) error
 	GetModules(user models.User, courseID uint, q models.PaginationQuery) ([]models.ModuleWithIsCompleted, error)
 	BuildModuleResponses(modules []models.ModuleWithIsCompleted) []models.ModuleResponse
+	GetModuleByID(id uint, user models.User) (*models.ModuleWithIsCompleted, error)
 }
 
 type moduleService struct {
@@ -198,4 +199,38 @@ func (s *moduleService) BuildModuleResponses(modules []models.ModuleWithIsComple
 	}
 
 	return responses
+}
+
+func (s *moduleService) GetModuleByID(id uint, user models.User) (*models.ModuleWithIsCompleted, error) {
+	module, err := s.moduleRepo.FindById(id)
+	if err != nil {
+		return nil, err
+	}
+
+	hasPurchased, err := s.courseRepo.HasPurchasedCourse(module.CourseID, user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	if !hasPurchased {
+		if user.Role != "admin" {
+			return nil, errors.New(user.Username + " has not bought this course!")
+		} else {
+			res := models.ModuleWithIsCompleted{
+				Module:      *module,
+				IsCompleted: false,
+			}
+			return &res, nil
+		}
+	} else {
+		isCompleted, err := s.moduleRepo.IsModuleCompleted(id, user.ID)
+		if err != nil {
+			return nil, err
+		}
+		res := models.ModuleWithIsCompleted{
+			Module:      *module,
+			IsCompleted: isCompleted,
+		}
+		return &res, nil
+	}
 }

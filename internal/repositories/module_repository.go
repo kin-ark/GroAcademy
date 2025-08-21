@@ -13,6 +13,7 @@ type ModuleRepository interface {
 	Update(*models.Module) error
 	Delete(*models.Module) error
 	FindById(uint) (*models.Module, error)
+	IsModuleCompleted(id uint, userId uint) (bool, error)
 	// MarkModuleAsComplete(id uint) error
 }
 
@@ -46,7 +47,22 @@ func (r *moduleRepository) Update(module *models.Module) error {
 }
 
 func (r *moduleRepository) Delete(module *models.Module) error {
-	return r.db.Delete(module).Error
+	courseID := module.CourseID
+	deletedOrder := module.Order
+	err := r.db.Delete(module).Error
+	if err != nil {
+		return err
+	}
+
+	err = database.DB.Model(&models.Module{}).
+		Where("course_id = ?", courseID).
+		Where("\"order\" > ?", deletedOrder).
+		Update("\"order\"", gorm.Expr("\"order\" - ?", 1)).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (r *moduleRepository) FindById(id uint) (*models.Module, error) {
@@ -57,4 +73,18 @@ func (r *moduleRepository) FindById(id uint) (*models.Module, error) {
 	}
 
 	return &module, nil
+}
+
+func (r *moduleRepository) IsModuleCompleted(id uint, userId uint) (bool, error) {
+	var isCompleted bool
+	err := r.db.Model(&models.Module{}).
+		Select("module_progresses.is_completed").
+		Joins("JOIN module_progresses ON modules.id = module_progresses.module_id").
+		Where("modules.id = ?", id).Where("module_progresses.user_id = ?", userId).
+		Scan(&isCompleted).Error
+	if err != nil {
+		return false, err
+	}
+
+	return isCompleted, nil
 }

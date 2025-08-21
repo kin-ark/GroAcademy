@@ -194,3 +194,50 @@ func (mc *ModuleController) GetModules(c *gin.Context) {
 		"data":    data,
 	})
 }
+
+func (mc *ModuleController) GetModuleById(c *gin.Context) {
+	idParam := c.Param("id")
+	id, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Invalid course ID",
+			"data":    nil,
+		})
+		return
+	}
+
+	user, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Bad Request",
+			"data":    nil,
+		})
+		return
+	}
+	u := user.(models.User)
+
+	res, err := mc.service.GetModuleByID(uint(id), u)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+			"data":    nil,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"id":            res.ID,
+		"course_id":     res.CourseID,
+		"title":         res.Title,
+		"description":   res.Description,
+		"order":         res.Order,
+		"pdf_content":   res.PDFContent,
+		"video_content": res.VideoContent,
+		"is_completed":  res.IsCompleted,
+		"created_at":    res.CreatedAt,
+		"updated_at":    res.UpdatedAt,
+	})
+}

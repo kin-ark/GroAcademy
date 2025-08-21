@@ -52,9 +52,13 @@ func RegisterRoutes(r *gin.Engine) {
 		}
 
 		// CRUD Module Route
-		// api.GET("/modules/:id", controllers.GetModuleById)
-		// api.PUT("/modules/:id", controllers.PutModuleById)
-		// api.DELETE("/modules/:id", controllers.DeleteModuleById)
+		modules := api.Group("/modules")
+		modules.Use(middlewares.RequireAuth)
+		{
+			modules.GET("/:id", moduleController.GetModuleById)
+			modules.PUT("/:id", moduleController.PutModule)
+			modules.DELETE("/:id", moduleController.DeleteModuleByID)
+		}
 
 		// CRUD User Route
 		// api.GET("/users", controllers.GetUsers)
