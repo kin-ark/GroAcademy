@@ -13,6 +13,8 @@ func RegisterRoutes(r *gin.Engine) {
 	userRepo := repositories.NewUserRepository()
 	authService := services.NewAuthService(userRepo)
 	authController := controllers.NewAuthController(authService)
+	userService := services.NewUserService(userRepo)
+	userController := controllers.NewUserController(userService)
 
 	courseRepo := repositories.NewCourseRepository()
 	courseService := services.NewCourseService(courseRepo)
@@ -45,9 +47,9 @@ func RegisterRoutes(r *gin.Engine) {
 			courses.GET("/my-courses", courseController.GetMyCourses)
 
 			// CRUD Module
-			courses.POST("/:id/modules", moduleController.PostModule)
+			courses.POST("/:id/modules", middlewares.RequireAdmin, moduleController.PostModule)
 			courses.GET("/:id/modules", moduleController.GetModules)
-			courses.PATCH("/:id/modules/reorder", moduleController.ReorderModules)
+			courses.PATCH("/:id/modules/reorder", middlewares.RequireAdmin, moduleController.ReorderModules)
 			courses.PATCH("/:id/modules/complete", moduleController.MarkModuleAsComplete)
 		}
 
@@ -56,12 +58,12 @@ func RegisterRoutes(r *gin.Engine) {
 		modules.Use(middlewares.RequireAuth)
 		{
 			modules.GET("/:id", moduleController.GetModuleById)
-			modules.PUT("/:id", moduleController.PutModule)
-			modules.DELETE("/:id", moduleController.DeleteModuleByID)
+			modules.PUT("/:id", middlewares.RequireAdmin, moduleController.PutModule)
+			modules.DELETE("/:id", middlewares.RequireAdmin, moduleController.DeleteModuleByID)
 		}
 
 		// CRUD User Route
-		// api.GET("/users", controllers.GetUsers)
+		api.GET("/users", userController.GetUsers)
 		// api.GET("/users/:id", controllers.GetUserById)
 		// api.POST("/users/:id/balance", controllers.PostUserBalance)
 		// api.PUT("/users/:id", controllers.PutUserById)

@@ -14,7 +14,7 @@ type CourseRepository interface {
 	Update(course *models.Course) error
 	Delete(course *models.Course) error
 	FindById(id uint) (*models.Course, error)
-	GetAllCourses(query models.CoursesQuery) ([]models.CourseWithModulesCount, int64, error)
+	GetAllCourses(query models.SearchQuery) ([]models.CourseWithModulesCount, int64, error)
 	FindModulesByCourseID(id uint) ([]models.Module, int64, error)
 	HasPurchasedCourse(courseId uint, userId uint) (bool, error)
 	FindModulesWithProgress(courseID, userID uint) ([]models.ModuleWithIsCompleted, error)
@@ -56,7 +56,7 @@ func (r *courseRepository) FindById(id uint) (*models.Course, error) {
 	return &course, nil
 }
 
-func (r *courseRepository) GetAllCourses(query models.CoursesQuery) ([]models.CourseWithModulesCount, int64, error) {
+func (r *courseRepository) GetAllCourses(query models.SearchQuery) ([]models.CourseWithModulesCount, int64, error) {
 	var results []models.CourseWithModulesCount
 	var totalItems int64
 

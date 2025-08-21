@@ -1,6 +1,8 @@
 package repositories
 
 import (
+	"math"
+
 	"github.com/kin-ark/GroAcademy/internal/database"
 	"github.com/kin-ark/GroAcademy/internal/models"
 	"gorm.io/gorm"
@@ -9,6 +11,7 @@ import (
 type UserRepository interface {
 	Create(user *models.User) error
 	FindByIdentifier(identifier string) (*models.User, error)
+	GetAllUsers(query models.SearchQuery) ([]models.User, int64, error)
 }
 
 type userRepository struct {
@@ -30,4 +33,39 @@ func (r *userRepository) FindByIdentifier(identifier string) (*models.User, erro
 		return nil, err
 	}
 	return &user, nil
+}
+
+func (r *userRepository) GetAllUsers(query models.SearchQuery) ([]models.User, int64, error) {
+	var results []models.User
+	var totalItems int64
+
+	base := r.db.Model(&models.User{})
+
+	if query.Q != "" {
+		search := "%" + query.Q + "%"
+		base = base.Where("users.first_name ILIKE ? OR users.last_name ILIKE ? OR users.username ILIKE ? OR users.email ILIKE ?",
+			search, search, search)
+	}
+
+	if err := base.Count(&totalItems).Error; err != nil {
+		return nil, 0, err
+	}
+
+	totalPages := int(math.Ceil(float64(totalItems) / float64(query.Limit)))
+	if totalPages == 0 {
+		totalPages = 1
+	}
+	if query.Page > totalPages {
+		query.Page = totalPages
+	}
+	if query.Page < 1 {
+		query.Page = 1
+	}
+
+	offset := (query.Page - 1) * query.Limit
+	if err := base.Limit(query.Limit).Offset(offset).Scan(&results).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return results, totalItems, nil
 }

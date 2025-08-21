@@ -29,7 +29,7 @@ type CourseFormInput struct {
 	ThumbnailImage *multipart.FileHeader `form:"thumbnail_image"`
 }
 
-type CoursesQuery struct {
+type SearchQuery struct {
 	Q string `form:"q"`
 	PaginationQuery
 }

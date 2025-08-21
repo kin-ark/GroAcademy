@@ -57,3 +57,12 @@ type MarkModuleResponse struct {
 	CourseProgress CourseProgress `json:"course_progress"`
 	CertificateURL *string        `json:"certificate_url"`
 }
+
+type UsersResponse struct {
+	ID        string  `json:"id"`
+	Username  string  `json:"username"`
+	Email     string  `json:"email"`
+	FirstName string  `json:"first_name"`
+	LastName  string  `json:"last_name"`
+	Balance   float64 `json:"balance"`
+}

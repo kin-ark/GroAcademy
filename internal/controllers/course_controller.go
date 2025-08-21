@@ -57,7 +57,7 @@ func (cc *CourseController) PostCourse(c *gin.Context) {
 }
 
 func (cc *CourseController) GetAllCourses(c *gin.Context) {
-	var query models.CoursesQuery
+	var query models.SearchQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "error",
@@ -255,7 +255,7 @@ func (cc *CourseController) BuyCourse(c *gin.Context) {
 }
 
 func (cc *CourseController) GetMyCourses(c *gin.Context) {
-	var query models.CoursesQuery
+	var query models.SearchQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "error",

@@ -14,7 +14,7 @@ import (
 type CourseService interface {
 	CreateCourse(*gin.Context, models.CourseFormInput) (*models.Course, error)
 	EditCourse(c *gin.Context, id uint, input models.CourseFormInput) (*models.Course, error)
-	GetAllCourses(query models.CoursesQuery) ([]models.CourseWithModulesCount, models.PaginationResponse, error)
+	GetAllCourses(query models.SearchQuery) ([]models.CourseWithModulesCount, models.PaginationResponse, error)
 	GetCourseByID(id uint) (*models.Course, error)
 	BuildCourseResponses(courses []models.CourseWithModulesCount) []models.CourseResponse
 	GetModulesByCourse(id uint) ([]models.Module, int64, error)
@@ -49,7 +49,7 @@ func (s *courseService) CreateCourse(c *gin.Context, input models.CourseFormInpu
 	return &course, nil
 }
 
-func (s *courseService) GetAllCourses(query models.CoursesQuery) ([]models.CourseWithModulesCount, models.PaginationResponse, error) {
+func (s *courseService) GetAllCourses(query models.SearchQuery) ([]models.CourseWithModulesCount, models.PaginationResponse, error) {
 	query.Normalize()
 
 	courses, totalItems, err := s.courseRepo.GetAllCourses(query)
