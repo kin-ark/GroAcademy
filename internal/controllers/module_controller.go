@@ -281,3 +281,51 @@ func (mc *ModuleController) MarkModuleAsComplete(c *gin.Context) {
 		"data":    res,
 	})
 }
+
+func (mc *ModuleController) ReorderModules(c *gin.Context) {
+	idParam := c.Param("id")
+	id, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Invalid course ID",
+			"data":    nil,
+		})
+		return
+	}
+
+	var req models.ReorderModulesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "invalid request body",
+			"data":    nil,
+		})
+		return
+	}
+
+	if len(req.ModuleOrder) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "module_order cannot be empty",
+			"data":    nil,
+		})
+		return
+	}
+
+	err = mc.service.ReorderModules(req, uint(id))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "error",
+			"message": "failed to reorder modules",
+			"data":    nil,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "modules reordered successfully",
+		"data":    req.ModuleOrder,
+	})
+}

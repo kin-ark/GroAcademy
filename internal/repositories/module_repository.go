@@ -17,6 +17,8 @@ type ModuleRepository interface {
 	FindById(uint) (*models.Module, error)
 	IsModuleCompleted(id uint, userId uint) (bool, error)
 	MarkModuleAsComplete(moduleID uint, userID uint) error
+	ReorderModules(courseID uint, orders []models.ModuleOrder) error
+	GetModuleIDsByCourse(courseID uint, ids *[]uint) error
 }
 
 type moduleRepository struct {
@@ -103,4 +105,32 @@ func (r *moduleRepository) MarkModuleAsComplete(moduleID uint, userID uint) erro
 		return errors.New("no progress record found for user " + fmt.Sprint(userID) + "and module " + fmt.Sprint(moduleID))
 	}
 	return nil
+}
+
+func (r *moduleRepository) ReorderModules(courseID uint, orders []models.ModuleOrder) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		for _, m := range orders {
+			if err := tx.Model(&models.Module{}).
+				Where("id = ? AND course_id = ?", m.ID, courseID).
+				Update("order", -int(m.ID)).Error; err != nil {
+				return err
+			}
+		}
+
+		for _, m := range orders {
+			if err := tx.Model(&models.Module{}).
+				Where("id = ? AND course_id = ?", m.ID, courseID).
+				Update("order", m.Order).Error; err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+}
+
+func (r *moduleRepository) GetModuleIDsByCourse(courseID uint, ids *[]uint) error {
+	return r.db.Model(&models.Module{}).
+		Where("course_id = ?", courseID).
+		Pluck("id", ids).Error
 }

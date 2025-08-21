@@ -2,7 +2,9 @@ package services
 
 import (
 	"errors"
+	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kin-ark/GroAcademy/internal/models"
@@ -17,6 +19,7 @@ type ModuleService interface {
 	BuildModuleResponses(modules []models.ModuleWithIsCompleted) []models.ModuleResponse
 	GetModuleByID(id uint, user models.User) (*models.ModuleWithIsCompleted, error)
 	MarkModuleAsComplete(id uint, user models.User) (*models.MarkModuleResponse, error)
+	ReorderModules(req models.ReorderModulesRequest, courseID uint) error
 }
 
 type moduleService struct {
@@ -270,4 +273,57 @@ func (s *moduleService) MarkModuleAsComplete(id uint, user models.User) (*models
 		CertificateURL: certificateURL,
 	}
 	return &res, nil
+}
+
+func (s *moduleService) ReorderModules(req models.ReorderModulesRequest, courseID uint) error {
+	if len(req.ModuleOrder) == 0 {
+		return errors.New("module_order cannot be empty")
+	}
+
+	var moduleIDs []uint
+	if err := s.moduleRepo.GetModuleIDsByCourse(courseID, &moduleIDs); err != nil {
+		return errors.New("failed to fetch modules: " + err.Error())
+	}
+
+	if len(moduleIDs) == 0 {
+		return errors.New("no modules found for course")
+	}
+
+	validModuleMap := make(map[uint]bool)
+	for _, id := range moduleIDs {
+		validModuleMap[id] = true
+	}
+
+	orderSet := make(map[int]bool)
+	parsedOrders := make([]models.ModuleOrder, 0, len(req.ModuleOrder))
+
+	for _, m := range req.ModuleOrder {
+		idUint, err := strconv.ParseUint(m.ID, 10, 64)
+		if err != nil {
+			return fmt.Errorf("invalid module id format: %s", m.ID)
+		}
+		moduleID := uint(idUint)
+
+		if !validModuleMap[moduleID] {
+			return fmt.Errorf("invalid module id: %d", moduleID)
+		}
+		if m.Order < 1 || m.Order > len(moduleIDs) {
+			return fmt.Errorf("invalid order %d for module %d", m.Order, moduleID)
+		}
+		if orderSet[m.Order] {
+			return fmt.Errorf("duplicate order: %d", m.Order)
+		}
+		orderSet[m.Order] = true
+
+		parsedOrders = append(parsedOrders, models.ModuleOrder{
+			ID:    moduleID,
+			Order: m.Order,
+		})
+	}
+
+	if len(req.ModuleOrder) != len(moduleIDs) {
+		return fmt.Errorf("all modules must be included in the reorder request")
+	}
+
+	return s.moduleRepo.ReorderModules(courseID, parsedOrders)
 }

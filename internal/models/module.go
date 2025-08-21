@@ -22,3 +22,8 @@ type ModuleWithIsCompleted struct {
 	Module
 	IsCompleted bool `json:"is_completed"`
 }
+
+type ModuleOrder struct {
+	ID    uint
+	Order int
+}

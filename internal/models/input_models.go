@@ -57,3 +57,10 @@ type ModuleFormInput struct {
 	PDFContent   *multipart.FileHeader `form:"pdf_content"`
 	VideoContent *multipart.FileHeader `form:"video_content"`
 }
+
+type ReorderModulesRequest struct {
+	ModuleOrder []struct {
+		ID    string `json:"id"`
+		Order int    `json:"order"`
+	} `json:"module_order"`
+}
