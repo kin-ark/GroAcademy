@@ -22,3 +22,9 @@ type CourseWithModulesCount struct {
 	Course
 	ModulesCount int64 `json:"modules_count"`
 }
+
+type CourseProgress struct {
+	TotalModules     int     `json:"total_modules"`
+	CompletedModules int     `json:"completed_modules"`
+	Percentage       float64 `json:"percentage"`
+}

@@ -50,3 +50,10 @@ type MyCoursesResponse struct {
 	ProgressPercentage float64   `json:"progress_percentage"`
 	PurchasedAt        time.Time `json:"purchased_at"`
 }
+
+type MarkModuleResponse struct {
+	ModuleID       uint           `json:"module_id"`
+	IsCompleted    bool           `json:"is_completed"`
+	CourseProgress CourseProgress `json:"course_progress"`
+	CertificateURL *string        `json:"certificate_url"`
+}

@@ -6,6 +6,7 @@ import (
 	"github.com/kin-ark/GroAcademy/internal/database"
 	"github.com/kin-ark/GroAcademy/internal/models"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type CourseRepository interface {
@@ -19,6 +20,7 @@ type CourseRepository interface {
 	FindModulesWithProgress(courseID, userID uint) ([]models.ModuleWithIsCompleted, error)
 	BuyCourse(user *models.User, course *models.Course) (*models.Purchase, error)
 	GetCoursesByUser(user models.User) ([]models.MyCoursesResponse, error)
+	GetCourseProgress(id uint, user models.User) (*models.CourseProgress, error)
 }
 
 type courseRepository struct {
@@ -196,4 +198,35 @@ func (r *courseRepository) GetCoursesByUser(user models.User) ([]models.MyCourse
 	}
 
 	return courses, nil
+}
+
+func (r *courseRepository) GetCourseProgress(id uint, user models.User) (*models.CourseProgress, error) {
+	var totalModules int64
+	err := r.db.Model(&models.Module{}).
+		Where("course_id = ?", id).
+		Count(&totalModules).Error
+	if err != nil {
+		return nil, err
+	}
+
+	var completedModules int64
+	err = r.db.Model(&models.ModuleProgress{}).
+		Joins("JOIN modules ON modules.id = module_progresses.module_id").
+		Where("modules.course_id = ? AND module_progresses.user_id = ? AND module_progresses.is_completed = TRUE", id, user.ID).
+		Count(&completedModules).Error
+	if err != nil {
+		return nil, err
+	}
+
+	var percentage float64
+	if totalModules > 0 {
+		percentage = float64(completedModules) * 100.0 / float64(totalModules)
+	}
+
+	res := models.CourseProgress{
+		TotalModules:     int(totalModules),
+		CompletedModules: int(completedModules),
+		Percentage:       percentage,
+	}
+	return &res, nil
 }

@@ -16,6 +16,7 @@ type ModuleService interface {
 	GetModules(user models.User, courseID uint, q models.PaginationQuery) ([]models.ModuleWithIsCompleted, error)
 	BuildModuleResponses(modules []models.ModuleWithIsCompleted) []models.ModuleResponse
 	GetModuleByID(id uint, user models.User) (*models.ModuleWithIsCompleted, error)
+	MarkModuleAsComplete(id uint, user models.User) (*models.MarkModuleResponse, error)
 }
 
 type moduleService struct {
@@ -233,4 +234,40 @@ func (s *moduleService) GetModuleByID(id uint, user models.User) (*models.Module
 		}
 		return &res, nil
 	}
+}
+
+func (s *moduleService) MarkModuleAsComplete(id uint, user models.User) (*models.MarkModuleResponse, error) {
+	err := s.moduleRepo.MarkModuleAsComplete(id, user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	module, err := s.moduleRepo.FindById(id)
+	if err != nil {
+		return nil, err
+	}
+
+	isCompleted, err := s.moduleRepo.IsModuleCompleted(id, user.ID)
+	if err != nil {
+		return nil, err
+	}
+	courseId := module.CourseID
+	courseProgress, err := s.courseRepo.GetCourseProgress(courseId, user)
+	if err != nil {
+		return nil, err
+	}
+
+	var certificateURL *string
+	if int64(courseProgress.TotalModules) > 0 && courseProgress.CompletedModules == courseProgress.TotalModules {
+		url := "Placeholder"
+		certificateURL = &url
+	}
+
+	res := models.MarkModuleResponse{
+		ModuleID:       module.ID,
+		IsCompleted:    isCompleted,
+		CourseProgress: *courseProgress,
+		CertificateURL: certificateURL,
+	}
+	return &res, nil
 }

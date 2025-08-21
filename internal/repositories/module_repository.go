@@ -1,6 +1,8 @@
 package repositories
 
 import (
+	"errors"
+	"fmt"
 	"log"
 
 	"github.com/kin-ark/GroAcademy/internal/database"
@@ -14,7 +16,7 @@ type ModuleRepository interface {
 	Delete(*models.Module) error
 	FindById(uint) (*models.Module, error)
 	IsModuleCompleted(id uint, userId uint) (bool, error)
-	// MarkModuleAsComplete(id uint) error
+	MarkModuleAsComplete(moduleID uint, userID uint) error
 }
 
 type moduleRepository struct {
@@ -87,4 +89,18 @@ func (r *moduleRepository) IsModuleCompleted(id uint, userId uint) (bool, error)
 	}
 
 	return isCompleted, nil
+}
+
+func (r *moduleRepository) MarkModuleAsComplete(moduleID uint, userID uint) error {
+	result := r.db.Model(&models.ModuleProgress{}).
+		Where("module_id = ? AND user_id = ?", moduleID, userID).
+		Update("is_completed", true)
+
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return errors.New("no progress record found for user " + fmt.Sprint(userID) + "and module " + fmt.Sprint(moduleID))
+	}
+	return nil
 }

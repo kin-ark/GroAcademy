@@ -241,3 +241,43 @@ func (mc *ModuleController) GetModuleById(c *gin.Context) {
 		"updated_at":    res.UpdatedAt,
 	})
 }
+
+func (mc *ModuleController) MarkModuleAsComplete(c *gin.Context) {
+	idParam := c.Param("id")
+	id, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Invalid course ID",
+			"data":    nil,
+		})
+		return
+	}
+
+	user, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Bad Request",
+			"data":    nil,
+		})
+		return
+	}
+	u := user.(models.User)
+
+	res, err := mc.service.MarkModuleAsComplete(uint(id), u)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+			"data":    nil,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "request success",
+		"data":    res,
+	})
+}
