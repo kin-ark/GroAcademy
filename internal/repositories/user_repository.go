@@ -46,7 +46,7 @@ func (r *userRepository) GetAllUsers(query models.SearchQuery) ([]models.User, i
 	if query.Q != "" {
 		search := "%" + query.Q + "%"
 		base = base.Where("users.first_name ILIKE ? OR users.last_name ILIKE ? OR users.username ILIKE ? OR users.email ILIKE ?",
-			search, search, search)
+			search, search, search, search)
 	}
 
 	if err := base.Count(&totalItems).Error; err != nil {
