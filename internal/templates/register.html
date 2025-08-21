@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register - GroAcademy</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <div class="container">
+    <h2>Create an Account</h2>
+    <form id="registerForm">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" required />
+      </div>
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" required />
+      </div>
+      <div class="form-group">
+        <label for="first_name">First Name</label>
+        <input type="text" id="first_name" required />
+      </div>
+      <div class="form-group">
+        <label for="last_name">Last Name</label>
+        <input type="text" id="last_name" required />
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" required minlength="8" />
+      </div>
+      <div class="form-group">
+        <label for="confirm_password">Confirm Password</label>
+        <input type="password" id="confirm_password" required minlength="8" />
+      </div>
+      <button type="submit" class="success">Register</button>
+      <div id="error" class="error"></div>
+    </form>
+    <p style="text-align:center; margin-top:1rem;">
+      Already have an account? <a href="/login">Login here</a>
+    </p>
+  </div>
+
+  <script>
+    async function apiRequest(path, method = "GET", body = null) {
+      const token = localStorage.getItem("token");
+      const headers = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
+      const res = await fetch(path, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : null,
+      });
+
+      if (!res.ok) {
+        let err;
+        try { err = await res.json(); } catch { err = {}; }
+        throw new Error(err.message || "Request failed");
+      }
+      return res.json();
+    }
+
+    function setupRegisterForm() {
+      const form = document.getElementById("registerForm");
+      if (!form) return;
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const email = document.getElementById("email").value;
+        const username = document.getElementById("username").value;
+        const first_name = document.getElementById("first_name").value;
+        const last_name = document.getElementById("last_name").value;
+        const password = document.getElementById("password").value;
+        const confirm_password = document.getElementById("confirm_password").value;
+
+        try {
+          const data = await apiRequest("/api/auth/register", "POST", {
+            email,
+            username,
+            first_name,
+            last_name,
+            password,
+            confirm_password
+          });
+
+          if (data.status === "success") {
+            localStorage.setItem("token", data.token);
+            console.log("Registered & logged in!");
+            window.location.href = "/courses";
+          } else {
+            document.getElementById("error").textContent = data.message || "Registration failed";
+          }
+        } catch (err) {
+          document.getElementById("error").textContent = err.message;
+          console.error(err.message);
+        }
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", setupRegisterForm);
+  </script>
+</body>
+</html>

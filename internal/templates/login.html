@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login - GroAcademy</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <div class="container">
+    <h2>Login to GroAcademy</h2>
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="identifier">Email or Username</label>
+        <input type="text" id="identifier" required />
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" required minlength="8" />
+      </div>
+      <button type="submit">Login</button>
+      <div id="error" class="error"></div>
+    </form>
+    <p style="text-align:center; margin-top:1rem;">
+      Don`t have an account? <a href="/register">Register here</a>
+    </p>
+  </div>
+
+  <script>
+    async function apiRequest(path, method = "GET", body = null) {
+      const token = localStorage.getItem("token");
+      const headers = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
+      const res = await fetch(path, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : null,
+      });
+
+      if (!res.ok) {
+        let err;
+        try { err = await res.json(); } catch { err = {}; }
+        throw new Error(err.message || "Request failed");
+      }
+      return res.json();
+    }
+
+    function setupLoginForm() {
+      const form = document.getElementById("loginForm");
+      if (!form) return;
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const email = document.getElementById("identifier").value;
+        const password = document.getElementById("password").value;
+
+        try {
+          const data = await apiRequest("/api/auth/login", "POST", {
+            identifier: email,
+            password: password,
+          });
+
+          if (data.status === "success") {
+            localStorage.setItem("token", data.token);
+            console.log("Login!");
+            window.location.href = "/courses";
+          } else {
+            document.getElementById("error").textContent = data.message || "Login failed";
+          }
+        } catch (err) {
+          document.getElementById("error").textContent = err.message;
+          console.error(err.message);
+        }
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", setupLoginForm);
+  </script>
+</body>
+</html>
