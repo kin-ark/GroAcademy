@@ -169,3 +169,29 @@ func (uc *UserController) PutUser(c *gin.Context) {
 		"status":  "success",
 	})
 }
+
+func (cc *UserController) DeleteUserByID(c *gin.Context) {
+	idParam := c.Param("id")
+	id, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Invalid course ID",
+			"data":    nil,
+		})
+		return
+	}
+
+	res := cc.service.DeleteUser(uint(id))
+
+	if res != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": res.Error(),
+			"data":    nil,
+		})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}

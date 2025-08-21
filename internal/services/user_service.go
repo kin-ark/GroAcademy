@@ -13,6 +13,7 @@ import (
 type UserService interface {
 	GetUsers(query models.SearchQuery) ([]models.User, models.PaginationResponse, error)
 	EditUser(id uint, input models.PostUserRequest) (*models.User, error)
+    DeleteUser(id uint) error
 	BuildUsersResponse(users []models.User) []models.UsersResponse
 	GetUserById(id uint) (*models.User, int, error)
 	AddUserBalance(id uint, increment float64) (*models.PostUserBalanceResponse, error)
@@ -124,4 +125,13 @@ func (s *userService) EditUser(id uint, input models.PostUserRequest) (*models.U
 	}
 
 	return user, nil
+}
+
+func (s *userService) DeleteUser(id uint) error {
+	existing, err := s.userRepo.FindById(id)
+	if err != nil {
+		return err
+	}
+
+	return s.userRepo.Delete(existing)
 }

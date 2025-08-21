@@ -13,6 +13,7 @@ import (
 type UserRepository interface {
 	Create(user *models.User) error
 	Update(user *models.User) error
+	Delete(user *models.User) error
 	FindByIdentifier(identifier string) (*models.User, error)
 	GetAllUsers(query models.SearchQuery) ([]models.User, int64, error)
 	FindById(id uint) (*models.User, error)
@@ -119,4 +120,8 @@ func (r *userRepository) Update(user *models.User) error {
 		Where("id = ?", user.ID).
 		Select("*").
 		Updates(user).Error
+}
+
+func (r *userRepository) Delete(user *models.User) error {
+	return r.db.Delete(user).Error
 }
