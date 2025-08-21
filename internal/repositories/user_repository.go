@@ -12,6 +12,7 @@ import (
 
 type UserRepository interface {
 	Create(user *models.User) error
+	Update(user *models.User) error
 	FindByIdentifier(identifier string) (*models.User, error)
 	GetAllUsers(query models.SearchQuery) ([]models.User, int64, error)
 	FindById(id uint) (*models.User, error)
@@ -111,4 +112,11 @@ func (r *userRepository) AddUserBalance(id uint, increment float64) error {
 		return errors.New("no user record found for user " + fmt.Sprint(id))
 	}
 	return nil
+}
+
+func (r *userRepository) Update(user *models.User) error {
+	return r.db.Model(&models.User{}).
+		Where("id = ?", user.ID).
+		Select("*").
+		Updates(user).Error
 }

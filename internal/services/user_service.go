@@ -1,15 +1,18 @@
 package services
 
 import (
+	"errors"
 	"math"
 	"strconv"
 
 	"github.com/kin-ark/GroAcademy/internal/models"
 	"github.com/kin-ark/GroAcademy/internal/repositories"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService interface {
 	GetUsers(query models.SearchQuery) ([]models.User, models.PaginationResponse, error)
+	EditUser(id uint, input models.PostUserRequest) (*models.User, error)
 	BuildUsersResponse(users []models.User) []models.UsersResponse
 	GetUserById(id uint) (*models.User, int, error)
 	AddUserBalance(id uint, increment float64) (*models.PostUserBalanceResponse, error)
@@ -88,4 +91,37 @@ func (s *userService) AddUserBalance(id uint, increment float64) (*models.PostUs
 	stringId := strconv.FormatUint(uint64(user.ID), 10)
 	res := models.PostUserBalanceResponse{ID: stringId, Username: user.Username, Balance: user.Balance}
 	return &res, nil
+}
+
+func (s *userService) EditUser(id uint, input models.PostUserRequest) (*models.User, error) {
+	user, err := s.userRepo.FindById(id)
+	if err != nil {
+		return nil, err
+	}
+
+	if user.Role == "admin" {
+		return nil, errors.New("admin cannot be edited")
+	}
+
+	if input.Password != "" {
+		hash, err := bcrypt.GenerateFromPassword([]byte(input.Password), 10)
+
+		if err != nil {
+			return nil, err
+		}
+
+		user.Password = string(hash)
+	}
+
+	user.FirstName = input.FirstName
+	user.LastName = input.LastName
+	user.Username = input.Username
+	user.Email = input.Email
+
+	err = s.userRepo.Update(user)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }

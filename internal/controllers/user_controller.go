@@ -123,3 +123,49 @@ func (uc *UserController) AddUserBalance(c *gin.Context) {
 		"data":    res,
 	})
 }
+
+func (uc *UserController) PutUser(c *gin.Context) {
+	idParam := c.Param("id")
+	id, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Invalid course ID",
+			"data":    nil,
+		})
+		return
+	}
+
+	var input models.PostUserRequest
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Bad Request",
+			"data":    nil,
+		})
+		return
+	}
+
+	result, err := uc.service.EditUser(uint(id), input)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+			"data":    nil,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"id":         idParam,
+			"username":   result.Username,
+			"first_name": result.FirstName,
+			"last_name":  result.LastName,
+			"balance":    result.Balance,
+		},
+		"message": "Edit user success",
+		"status":  "success",
+	})
+}
