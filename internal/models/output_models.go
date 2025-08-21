@@ -66,3 +66,9 @@ type UsersResponse struct {
 	LastName  string  `json:"last_name"`
 	Balance   float64 `json:"balance"`
 }
+
+type PostUserBalanceResponse struct {
+	ID       string  `json:"id"`
+	Username string  `json:"username"`
+	Balance  float64 `json:"balance"`
+}

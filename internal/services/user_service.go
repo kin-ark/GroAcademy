@@ -12,6 +12,7 @@ type UserService interface {
 	GetUsers(query models.SearchQuery) ([]models.User, models.PaginationResponse, error)
 	BuildUsersResponse(users []models.User) []models.UsersResponse
 	GetUserById(id uint) (*models.User, int, error)
+	AddUserBalance(id uint, increment float64) (*models.PostUserBalanceResponse, error)
 }
 
 type userService struct {
@@ -72,4 +73,19 @@ func (s *userService) GetUserById(id uint) (*models.User, int, error) {
 	}
 
 	return user, coursePurchased, nil
+}
+
+func (s *userService) AddUserBalance(id uint, increment float64) (*models.PostUserBalanceResponse, error) {
+	err := s.userRepo.AddUserBalance(id, increment)
+	if err != nil {
+		return nil, err
+	}
+
+	user, err := s.userRepo.FindById(id)
+	if err != nil {
+		return nil, err
+	}
+	stringId := strconv.FormatUint(uint64(user.ID), 10)
+	res := models.PostUserBalanceResponse{ID: stringId, Username: user.Username, Balance: user.Balance}
+	return &res, nil
 }

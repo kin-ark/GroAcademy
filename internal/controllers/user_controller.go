@@ -85,3 +85,41 @@ func (uc *UserController) GetUserById(c *gin.Context) {
 	})
 }
 
+func (uc *UserController) AddUserBalance(c *gin.Context) {
+	idParam := c.Param("id")
+	id, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Invalid user ID",
+			"data":    nil,
+		})
+		return
+	}
+
+	var increment models.PostBalance
+	if err := c.ShouldBindJSON(&increment); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": "Bad Request",
+			"data":    nil,
+		})
+		return
+	}
+
+	res, err := uc.service.AddUserBalance(uint(id), increment.Increment)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  "error",
+			"message": err.Error(),
+			"data":    nil,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Request success",
+		"data":    res,
+	})
+}

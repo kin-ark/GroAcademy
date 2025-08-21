@@ -64,3 +64,7 @@ type ReorderModulesRequest struct {
 		Order int    `json:"order"`
 	} `json:"module_order"`
 }
+
+type PostBalance struct {
+	Increment float64 `json:"increment"`
+}

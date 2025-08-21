@@ -1,6 +1,8 @@
 package repositories
 
 import (
+	"errors"
+	"fmt"
 	"math"
 
 	"github.com/kin-ark/GroAcademy/internal/database"
@@ -14,6 +16,7 @@ type UserRepository interface {
 	GetAllUsers(query models.SearchQuery) ([]models.User, int64, error)
 	FindById(id uint) (*models.User, error)
 	GetNumberOfCoursePurchased(id uint) (int, error)
+	AddUserBalance(id uint, increment float64) error
 }
 
 type userRepository struct {
@@ -93,4 +96,19 @@ func (r *userRepository) GetNumberOfCoursePurchased(id uint) (int, error) {
 
 	return int(coursesPurchased), nil
 
+}
+
+func (r *userRepository) AddUserBalance(id uint, increment float64) error {
+	result := r.db.Debug().
+		Model(&models.User{}).
+		Where("id = ?", id).
+		UpdateColumn("balance", gorm.Expr("balance + ?", increment))
+
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return errors.New("no user record found for user " + fmt.Sprint(id))
+	}
+	return nil
 }

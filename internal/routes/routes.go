@@ -65,7 +65,7 @@ func RegisterRoutes(r *gin.Engine) {
 		// CRUD User Route
 		api.GET("/users", userController.GetUsers)
 		api.GET("/users/:id", userController.GetUserById)
-		// api.POST("/users/:id/balance", controllers.PostUserBalance)
+		api.POST("/users/:id/balance", userController.AddUserBalance)
 		// api.PUT("/users/:id", controllers.PutUserById)
 		// api.DELETE("/users/:id", controllers.DeleteUserById)
 	}
