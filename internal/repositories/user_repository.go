@@ -12,6 +12,8 @@ type UserRepository interface {
 	Create(user *models.User) error
 	FindByIdentifier(identifier string) (*models.User, error)
 	GetAllUsers(query models.SearchQuery) ([]models.User, int64, error)
+	FindById(id uint) (*models.User, error)
+	GetNumberOfCoursePurchased(id uint) (int, error)
 }
 
 type userRepository struct {
@@ -68,4 +70,27 @@ func (r *userRepository) GetAllUsers(query models.SearchQuery) ([]models.User, i
 	}
 
 	return results, totalItems, nil
+}
+
+func (r *userRepository) FindById(id uint) (*models.User, error) {
+	var user models.User
+	err := r.db.First(&user, id).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func (r *userRepository) GetNumberOfCoursePurchased(id uint) (int, error) {
+	var coursesPurchased int64
+	err := r.db.Model(&models.Purchase{}).
+		Where("purchases.user_id = ?", id).
+		Count(&coursesPurchased).Error
+	if err != nil {
+		return -1, err
+	}
+
+	return int(coursesPurchased), nil
+
 }

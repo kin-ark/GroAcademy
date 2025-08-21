@@ -11,6 +11,7 @@ import (
 type UserService interface {
 	GetUsers(query models.SearchQuery) ([]models.User, models.PaginationResponse, error)
 	BuildUsersResponse(users []models.User) []models.UsersResponse
+	GetUserById(id uint) (*models.User, int, error)
 }
 
 type userService struct {
@@ -57,4 +58,18 @@ func (s *userService) BuildUsersResponse(users []models.User) []models.UsersResp
 		})
 	}
 	return res
+}
+
+func (s *userService) GetUserById(id uint) (*models.User, int, error) {
+	user, err := s.userRepo.FindById(id)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	coursePurchased, err := s.userRepo.GetNumberOfCoursePurchased(id)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return user, coursePurchased, nil
 }
