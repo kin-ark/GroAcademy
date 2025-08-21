@@ -124,7 +124,7 @@ func (r *courseRepository) FindModulesWithProgress(courseID, userID uint) ([]mod
 	var modules []models.ModuleWithIsCompleted
 
 	err := r.db.Model(&models.Module{}).
-		Select("modules.*, COALESCE(module_progresses.is_completed, false) AS completed").
+		Select("modules.*, module_progresses.is_completed").
 		Joins("LEFT JOIN module_progresses ON module_progresses.module_id = modules.id AND module_progresses.user_id = ?", userID).
 		Where("modules.course_id = ?", courseID).
 		Order("modules.order ASC").
@@ -157,17 +157,17 @@ func (r *courseRepository) BuyCourse(user *models.User, course *models.Course) (
 		return nil, err
 	}
 
-	progresses := make([]models.ModuleProgress, len(modules))
-	for i, m := range modules {
-		progresses[i] = models.ModuleProgress{
+	var progresses []models.ModuleProgress
+	for _, m := range modules {
+		progresses = append(progresses, models.ModuleProgress{
 			UserID:      user.ID,
 			ModuleID:    m.ID,
 			IsCompleted: false,
-		}
+		})
 	}
 
 	if len(progresses) > 0 {
-		if err := r.db.Create(&progresses).Error; err != nil {
+		if err := r.db.Clauses(clause.OnConflict{DoNothing: true}).Create(&progresses).Error; err != nil {
 			return nil, err
 		}
 	}
