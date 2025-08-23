@@ -40,14 +40,16 @@ func (s *moduleService) CreateModule(c *gin.Context, input models.ModuleFormInpu
 	var pdfPath string
 	var videoPath string
 	if input.PDFContent != nil {
-		pdfPath = "uploads/pdf_content/" + input.PDFContent.Filename
+		baseUrl := os.Getenv("BASE_URL")
+		pdfPath = baseUrl + "uploads/pdf_content/" + input.PDFContent.Filename
 		err := c.SaveUploadedFile(input.PDFContent, pdfPath)
 		if err != nil {
 			return nil, err
 		}
 	}
 	if input.VideoContent != nil {
-		videoPath = "uploads/video_content/" + input.VideoContent.Filename
+		baseUrl := os.Getenv("BASE_URL")
+		videoPath = baseUrl + "uploads/video_content/" + input.VideoContent.Filename
 		err := c.SaveUploadedFile(input.VideoContent, videoPath)
 		if err != nil {
 			return nil, err
@@ -91,7 +93,8 @@ func (s *moduleService) EditModule(c *gin.Context, input models.ModuleFormInput,
 	}
 
 	if input.PDFContent != nil {
-		path := "uploads/thumbnails/" + input.PDFContent.Filename
+		baseUrl := os.Getenv("BASE_URL")
+		path := baseUrl + "uploads/pdf_content/" + input.PDFContent.Filename
 		if err := c.SaveUploadedFile(input.PDFContent, path); err != nil {
 			return nil, err
 		}
@@ -101,7 +104,8 @@ func (s *moduleService) EditModule(c *gin.Context, input models.ModuleFormInput,
 	}
 
 	if input.VideoContent != nil {
-		path := "uploads/thumbnails/" + input.VideoContent.Filename
+		baseUrl := os.Getenv("BASE_URL")
+		path := baseUrl + "uploads/video_content/" + input.VideoContent.Filename
 		if err := c.SaveUploadedFile(input.VideoContent, path); err != nil {
 			return nil, err
 		}

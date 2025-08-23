@@ -41,7 +41,9 @@ func (s *courseService) CreateCourse(c *gin.Context, input models.CourseFormInpu
 		if err != nil {
 			return nil, err
 		}
-		course.ThumbnailImage = path
+
+		baseUrl := os.Getenv("BASE_URL")
+		course.ThumbnailImage = baseUrl + path
 	}
 
 	if err := s.courseRepo.Create(&course); err != nil {
@@ -117,7 +119,9 @@ func (s *courseService) EditCourse(c *gin.Context, id uint, input models.CourseF
 		if err := c.SaveUploadedFile(input.ThumbnailImage, path); err != nil {
 			return nil, err
 		}
-		existing.ThumbnailImage = path
+		
+		baseUrl := os.Getenv("BASE_URL")
+		existing.ThumbnailImage = baseUrl + path
 	} else {
 		existing.ThumbnailImage = ""
 	}
