@@ -80,6 +80,9 @@ func (authController *AuthController) Login(c *gin.Context) {
 		return
 	}
 
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie("Authorization", token, 3600, "", "", true, true)
+
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "success",
 		"message": "Login successful",

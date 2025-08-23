@@ -1,0 +1,67 @@
+{{define "pagination"}}
+<div class="pagination-container">
+    <div class="items-per-page">
+        <label for="limit">Items per page:</label>
+        <select id="limit" name="limit" onchange="changeLimit(this.value)">
+            <option value="5" {{if eq .Limit 5}}selected{{end}}>5</option>
+            <option value="10" {{if eq .Limit 10}}selected{{end}}>10</option>
+            <option value="20" {{if eq .Limit 20}}selected{{end}}>20</option>
+            <option value="50" {{if eq .Limit 50}}selected{{end}}>50</option>
+        </select>
+    </div>
+
+    <div class="pagination-info">
+        {{$start := add (mul (sub .Page 1) .Limit) 1}}
+        {{$end := mul .Page .Limit}}
+        {{if gt $end .TotalItems}}
+            {{$end = .TotalItems}}
+        {{end}}
+        Showing {{$start}}-{{$end}} of {{.TotalItems}} courses
+    </div>
+
+    <div class="pagination-buttons">
+        {{if gt .Page 1}}
+            <a href="?page=1&limit={{.Limit}}&q={{.Search}}" class="pagination-btn first">
+                <span>&laquo;</span> First
+            </a>
+        {{end}}
+
+        {{if gt .Page 1}}
+            <a href="?page={{sub .Page 1}}&limit={{.Limit}}&q={{.Search}}" class="pagination-btn prev">
+                <span>&lsaquo;</span> Previous
+            </a>
+        {{end}}
+
+        <div class="page-numbers">
+            {{range .Pages}}
+                {{if eq . $.Page}}
+                    <span class="pagination-btn current">{{.}}</span>
+                {{else}}
+                    <a href="?page={{.}}&limit={{$.Limit}}&q={{$.Search}}" class="pagination-btn">{{.}}</a>
+                {{end}}
+            {{end}}
+        </div>
+
+        {{if lt .Page .TotalPages}}
+            <a href="?page={{add .Page 1}}&limit={{.Limit}}&q={{.Search}}" class="pagination-btn next">
+                Next <span>&rsaquo;</span>
+            </a>
+        {{end}}
+
+        {{if lt .Page .TotalPages}}
+            <a href="?page={{.TotalPages}}&limit={{.Limit}}&q={{.Search}}" class="pagination-btn last">
+                Last <span>&raquo;</span>
+            </a>
+        {{end}}
+    </div>
+</div>
+
+<script>
+function changeLimit(limit) {
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.set('limit', limit);
+    urlParams.set('page', '1');
+    window.location.search = urlParams.toString();
+}
+</script>
+{{end}}

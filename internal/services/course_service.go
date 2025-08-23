@@ -21,6 +21,8 @@ type CourseService interface {
 	DeleteCourseByID(id uint) error
 	BuyCourse(id uint, user *models.User) (*models.BuyCourseResponse, error)
 	GetCoursesByUser(user *models.User) ([]models.MyCoursesResponse, error)
+	HasPurchasedCourse(uint, uint) (bool, error)
+	GetPurchaseStatusForCourses(courseIDs []uint, userID uint) (map[uint]bool, error)
 }
 
 type courseService struct {
@@ -191,4 +193,25 @@ func (s *courseService) BuyCourse(id uint, user *models.User) (*models.BuyCourse
 
 func (s *courseService) GetCoursesByUser(user *models.User) ([]models.MyCoursesResponse, error) {
 	return s.courseRepo.GetCoursesByUser(*user)
+}
+
+func (s *courseService) HasPurchasedCourse(id uint, userId uint) (bool, error) {
+	return s.courseRepo.HasPurchasedCourse(id, userId)
+}
+
+func (s *courseService) GetPurchaseStatusForCourses(courseIDs []uint, userID uint) (map[uint]bool, error) {
+	purchasedIDs, err := s.courseRepo.FindPurchasedCourseIDs(userID, courseIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	statusMap := make(map[uint]bool, len(courseIDs))
+	for _, id := range courseIDs {
+		statusMap[id] = false
+	}
+	for _, id := range purchasedIDs {
+		statusMap[id] = true
+	}
+
+	return statusMap, nil
 }

@@ -75,3 +75,40 @@ func RequireAdmin(c *gin.Context) {
 
 	c.Next()
 }
+
+func FERequireAuth(c *gin.Context) {
+	var tokenString string
+	cookie, err := c.Cookie("Authorization")
+	if err == nil {
+		tokenString = cookie
+	}
+
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
+		return []byte(os.Getenv("SECRET")), nil
+	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
+
+	if err != nil {
+		log.Println("JWT parse error:", err)
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+		return
+	}
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		if float64(time.Now().Unix()) > claims["exp"].(float64) {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token expired"})
+			return
+		}
+
+		var user models.User
+		if err := database.DB.Where("username = ?", claims["sub"]).First(&user).Error; err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+			return
+		}
+
+		c.Set("user", user)
+
+		c.Next()
+	} else {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+	}
+}

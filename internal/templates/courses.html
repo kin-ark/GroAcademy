@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course | GroAcademy</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="layout">
+        {{template "sidebar" .User}}
+
+        <main class="content">
+            {{template "search-box" .Search}}
+
+            <section class="courses-grid">
+                {{range .Courses}}
+                    {{template "course-card" .}}
+                {{end}}
+            </section>
+
+            {{template "pagination" .}}
+        </main>
+    </div>
+</body>
+</html>

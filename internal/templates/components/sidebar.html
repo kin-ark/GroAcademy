@@ -1,0 +1,22 @@
+{{define "sidebar"}}
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <h2>{{.Username}}</h2>
+        <h3>${{.Balance}}</h3>
+    </div>
+    <nav class="sidebar-nav">
+        <ul>
+            <li class="sidebar-item">
+                <a href="/courses" class="sidebar-link">
+                    Courses
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="/my-courses" class="sidebar-link">
+                    My Courses
+                </a>
+            </li>
+        </ul>
+    </nav>
+</aside>
+{{end}}

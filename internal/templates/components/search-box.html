@@ -1,0 +1,13 @@
+{{define "search-box"}}
+<div class="search-box">
+  <form method="GET" action="/courses">
+    <input 
+      type="text" 
+      name="q" 
+      placeholder="Search courses..." 
+      value="{{.}}" 
+      class="search-input"
+    >
+  </form>
+</div>
+{{end}}

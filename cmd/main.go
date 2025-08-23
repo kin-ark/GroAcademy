@@ -12,10 +12,9 @@ func main() {
 	router.Static("/static", "./static")
 	router.Static("/uploads", "./uploads")
 
-	router.LoadHTMLGlob("internal/templates/*")
-
 	database.ConnectDB()
 
+	routes.SetupHTMLRenderer(router)
 	routes.RegisterFEoutes(router)
 	routes.RegisterRoutes(router)
 

@@ -76,3 +76,30 @@ type PostUserRequest struct {
 	Email     string `json:"email" binding:"required,email"`
 	Password  string `json:"password" binding:"omitempty,min=8"`
 }
+
+type CoursesPageData struct {
+	Courses    []CourseCardData
+	Page       int
+	TotalPages int
+	TotalItems int
+	Pages      []int
+	Limit      int
+	Search     string
+	User       *User
+}
+
+type CourseCardData struct {
+	ID             uint
+	Title          string
+	Instructor     string
+	Topics         pq.StringArray
+	ThumbnailImage string
+	Price          float64
+	Purchased      bool
+}
+
+type CourseDetailPageData struct {
+	Course    *Course
+	Purchased bool
+	User      *User
+}

@@ -21,6 +21,7 @@ type CourseRepository interface {
 	BuyCourse(user *models.User, course *models.Course) (*models.Purchase, error)
 	GetCoursesByUser(user models.User) ([]models.MyCoursesResponse, error)
 	GetCourseProgress(id uint, user models.User) (*models.CourseProgress, error)
+	FindPurchasedCourseIDs(userID uint, courseIDs []uint) ([]uint, error)
 }
 
 type courseRepository struct {
@@ -229,4 +230,18 @@ func (r *courseRepository) GetCourseProgress(id uint, user models.User) (*models
 		Percentage:       percentage,
 	}
 	return &res, nil
+}
+
+func (r *courseRepository) FindPurchasedCourseIDs(userID uint, courseIDs []uint) ([]uint, error) {
+	var purchasedIDs []uint
+
+	err := r.db.Table("purchases").
+		Where("user_id = ? AND course_id IN (?)", userID, courseIDs).
+		Pluck("course_id", &purchasedIDs).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return purchasedIDs, nil
 }

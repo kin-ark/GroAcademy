@@ -1,0 +1,27 @@
+{{define "course-card"}}
+<div class="card">
+    {{if .Purchased}}
+    <div class="badge">Purchased</div>
+    {{end}}
+    <div class="image">
+        <img src="{{.ThumbnailImage}}" alt="{{.Title}}">
+    </div>
+    <div class="info">
+        <h2 class="title">{{.Title}}</h2>
+        <div class="instructor">{{.Instructor}}</div>
+        <div class="topics">
+            {{range .Topics}}
+            <span class="topic">{{.}}</span>
+            {{end}}
+        </div>
+        <div class="bottom">
+            <div class="price">{{.Price}}</div>
+            <button class="course-btn" onclick="event.stopPropagation(); location.href='/course/{{.ID}}'">
+                <span>
+                    {{if .Purchased}}Learn Now!{{else}}Buy Now!{{end}}
+                </span>
+            </button>
+        </div>
+    </div>
+</div>
+{{end}}
