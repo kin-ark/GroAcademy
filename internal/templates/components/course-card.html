@@ -15,7 +15,7 @@
             {{end}}
         </div>
         <div class="bottom">
-            <div class="price">{{.Price}}</div>
+            <div class="price">${{.Price}}</div>
             <button class="course-btn" onclick="event.stopPropagation(); location.href='/course/{{.ID}}'">
                 <span>
                     {{if .Purchased}}Learn Now!{{else}}Buy Now!{{end}}

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Course.Title}} | GroAcademy</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="layout">
+        {{template "sidebar" .User}}
+        <main class="content">
+            <div class="course-detail">
+                <div class="back-navigation">
+                    <a href="/courses" class="back-btn">
+                        <span>&larr;</span> Back to Courses
+                    </a>
+                </div>
+
+                <div class="course-header">
+                    <div class="course-image">
+                        {{if .Course.ThumbnailImage}}
+                            <img src="{{.Course.ThumbnailImage}}" alt="{{.Course.Title}}" />
+                        {{else}}
+                            <div class="placeholder-image">
+                                <span>No Image</span>
+                            </div>
+                        {{end}}
+                    </div>
+                    
+                    <div class="course-info">
+                        <h1 class="course-title">{{.Course.Title}}</h1>
+                        <p class="course-instructor">By {{.Course.Instructor}}</p>
+                        
+                        {{if .Course.Topics}}
+                        <div class="course-topics">
+                            {{range .Course.Topics}}
+                                <span class="topic-tag">{{.}}</span>
+                            {{end}}
+                        </div>
+                        {{end}}
+                        
+                        <div class="course-actions">
+                            {{if .Course.Price}}
+                            <div class="course-price">
+                                <span class="current-price">${{.Course.Price}}</span>
+                            </div>
+                            {{end}}
+                            
+                            <div class="course-button">
+                                {{if .Purchased}}
+                                    <a href="/course/{{.Course.ID}}/learn" class="action-btn purchased">
+                                        Learn Now
+                                    </a>
+                                {{else}}
+                                    <form method="POST" action="/course/{{.Course.ID}}/purchase">
+                                        <button type="submit" class="action-btn buy">
+                                            Buy Now
+                                        </button>
+                                    </form>
+                                {{end}}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="course-content">
+                    <div class="description-section">
+                        <h2>About This Course</h2>
+                        {{if .Course.Description}}
+                            <div class="course-description">
+                                {{.Course.Description}}
+                            </div>
+                        {{else}}
+                            <p class="no-description">No description available for this course.</p>
+                        {{end}}
+                    </div>
+
+                    <div class="course-metadata">
+                        <div class="metadata-grid">
+                            <div class="metadata-item">
+                                <h3>Instructor</h3>
+                                <p>{{.Course.Instructor}}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
