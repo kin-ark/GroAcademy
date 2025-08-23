@@ -16,5 +16,7 @@ COPY --from=builder /app/app .
 COPY --from=builder /app/internal/templates ./internal/templates
 COPY --from=builder /app/static ./static
 
+RUN mkdir -p uploads
+
 EXPOSE 8080
 ENTRYPOINT ["./app"]
