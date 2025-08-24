@@ -51,9 +51,9 @@ func RegisterFEoutes(r *gin.Engine) {
 
 	fc := controllers.NewFEController(userService, courseService, moduleService)
 
-	r.GET("/login", fc.ShowLoginPage)
+	r.GET("/login", middlewares.RedirectIfAuthenticated, fc.ShowLoginPage)
 
-	r.GET("/register", fc.ShowRegisterPage)
+	r.GET("/register", middlewares.RedirectIfAuthenticated, fc.ShowRegisterPage)
 
 	r.GET("/courses", middlewares.FERequireAuth, fc.GetCoursesPage)
 

@@ -79,36 +79,81 @@ func RequireAdmin(c *gin.Context) {
 func FERequireAuth(c *gin.Context) {
 	var tokenString string
 	cookie, err := c.Cookie("Authorization")
-	if err == nil {
-		tokenString = cookie
+	if err != nil {
+		c.Redirect(http.StatusFound, "/login")
+		c.Abort()
+		return
+	}
+	tokenString = cookie
+
+	if tokenString == "" {
+		c.Redirect(http.StatusFound, "/login")
+		c.Abort()
+		return
 	}
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, jwt.ErrTokenSignatureInvalid
+		}
 		return []byte(os.Getenv("SECRET")), nil
 	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
 
 	if err != nil {
 		log.Println("JWT parse error:", err)
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+		c.Redirect(http.StatusFound, "/login")
+		c.Abort()
 		return
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		if float64(time.Now().Unix()) > claims["exp"].(float64) {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token expired"})
+			c.SetCookie("Authorization", "", -1, "/", "", false, true)
+			c.Redirect(http.StatusFound, "/login")
+			c.Abort()
 			return
 		}
 
 		var user models.User
 		if err := database.DB.Where("username = ?", claims["sub"]).First(&user).Error; err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+			c.SetCookie("Authorization", "", -1, "/", "", false, true)
+			c.Redirect(http.StatusFound, "/login")
+			c.Abort()
 			return
 		}
 
 		c.Set("user", user)
-
 		c.Next()
 	} else {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		c.Redirect(http.StatusFound, "/login")
+		c.Abort()
 	}
+}
+
+func RedirectIfAuthenticated(c *gin.Context) {
+	cookie, err := c.Cookie("Authorization")
+	if err != nil {
+		c.Next()
+		return
+	}
+
+	token, err := jwt.Parse(cookie, func(token *jwt.Token) (any, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, jwt.ErrTokenSignatureInvalid
+		}
+		return []byte(os.Getenv("SECRET")), nil
+	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
+
+	if err == nil && token.Valid {
+		if claims, ok := token.Claims.(jwt.MapClaims); ok {
+			if float64(time.Now().Unix()) < claims["exp"].(float64) {
+
+				c.Redirect(http.StatusFound, "/courses")
+				c.Abort()
+				return
+			}
+		}
+	}
+
+	c.Next()
 }
