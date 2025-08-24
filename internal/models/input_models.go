@@ -99,9 +99,11 @@ type CourseCardData struct {
 }
 
 type CourseDetailPageData struct {
-	Course    *Course
-	Purchased bool
-	User      *User
+	Course         *Course
+	Purchased      bool
+	User           *User
+	CourseProgress *CourseProgress
+	CertificateURL *string
 }
 
 type CourseModulesPageData struct {

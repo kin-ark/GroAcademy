@@ -21,6 +21,8 @@ type CourseRepository interface {
 	GetCoursesByUser(user models.User, query models.SearchQuery) ([]models.MyCoursesResponse, int64, error)
 	GetCourseProgress(id uint, user models.User) (*models.CourseProgress, error)
 	FindPurchasedCourseIDs(userID uint, courseIDs []uint) ([]uint, error)
+	CreateCourseCertificate(cert *models.Certificate) error
+	FindCourseCertificate(userID uint, courseID uint) (*models.Certificate, error)
 }
 
 type courseRepository struct {
@@ -242,4 +244,20 @@ func (r *courseRepository) FindPurchasedCourseIDs(userID uint, courseIDs []uint)
 	}
 
 	return purchasedIDs, nil
+}
+
+func (r *courseRepository) CreateCourseCertificate(cert *models.Certificate) error {
+	return r.db.Create(cert).Error
+}
+
+func (r *courseRepository) FindCourseCertificate(userID uint, courseID uint) (*models.Certificate, error) {
+	var cert models.Certificate
+	err := r.db.Where("user_id = ? AND course_id = ?", userID, courseID).First(&cert).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &cert, nil
 }

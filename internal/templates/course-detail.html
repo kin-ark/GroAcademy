@@ -60,6 +60,14 @@
                                     </form>
                                 {{end}}
                             </div>
+
+                            <div class="course-button">
+                                <a href="{{if or (not (eq .CourseProgress.TotalModules .CourseProgress.CompletedModules)) (not .CertificateURL)}}/{{else}}{{.CertificateURL}}{{end}}"
+                                class="action-btn purchased {{if or (not (eq .CourseProgress.TotalModules .CourseProgress.CompletedModules)) (not .CertificateURL)}}disabled{{end}}"
+                                {{if .CertificateURL}}download{{end}}>
+                                Download Certificate
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>

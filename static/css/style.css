@@ -607,6 +607,21 @@ button.success:hover {
     box-shadow: 0 6px 20px rgba(0, 123, 255, 0.3);
 }
 
+.action-btn.disabled {
+    background: #cccccc;
+    color: #666666;
+    cursor: not-allowed;
+    box-shadow: none;
+    pointer-events: none;
+    transform: none;
+}
+
+.action-btn.disabled:hover {
+    background: #cccccc;
+    color: #666666;
+    box-shadow: none;
+    transform: none;
+}
 .action-btn span {
     font-size: 1.2rem;
 }

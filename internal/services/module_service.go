@@ -3,12 +3,16 @@ package services
 import (
 	"errors"
 	"fmt"
+	"image/png"
 	"os"
+	"path/filepath"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kin-ark/GroAcademy/internal/models"
 	"github.com/kin-ark/GroAcademy/internal/repositories"
+	"github.com/kin-ark/GroAcademy/internal/utils"
 )
 
 type ModuleService interface {
@@ -21,7 +25,8 @@ type ModuleService interface {
 	MarkModuleAsComplete(id uint, user models.User) (*models.MarkModuleResponse, error)
 	ReorderModules(req models.ReorderModulesRequest, courseID uint) error
 	GetCourseProgress(id uint, user models.User) (*models.CourseProgress, error)
-	ChangeModuleCompletion(moduleID uint, userID uint, completed bool) error
+	ChangeModuleCompletion(moduleID uint, user models.User, completed bool) error
+	GetCertificateURL(courseID, userID uint) (*string, error)
 }
 
 type moduleService struct {
@@ -252,23 +257,25 @@ func (s *moduleService) MarkModuleAsComplete(id uint, user models.User) (*models
 
 	module, err := s.moduleRepo.FindById(id)
 	if err != nil {
+		s.moduleRepo.ChangeModuleCompletion(id, user.ID, false)
 		return nil, err
 	}
 
 	isCompleted, err := s.moduleRepo.IsModuleCompleted(id, user.ID)
 	if err != nil {
+		s.moduleRepo.ChangeModuleCompletion(id, user.ID, false)
 		return nil, err
 	}
 	courseId := module.CourseID
 	courseProgress, err := s.courseRepo.GetCourseProgress(courseId, user)
 	if err != nil {
+		s.moduleRepo.ChangeModuleCompletion(id, user.ID, false)
 		return nil, err
 	}
 
-	var certificateURL *string
-	if int64(courseProgress.TotalModules) > 0 && courseProgress.CompletedModules == courseProgress.TotalModules {
-		url := "Placeholder"
-		certificateURL = &url
+	certificateURL, err := s.generateCertificateIfEligible(id, user, courseId, courseProgress)
+	if err != nil {
+		return nil, err
 	}
 
 	res := models.MarkModuleResponse{
@@ -337,6 +344,100 @@ func (s *moduleService) GetCourseProgress(id uint, user models.User) (*models.Co
 	return s.courseRepo.GetCourseProgress(id, user)
 }
 
-func (s *moduleService) ChangeModuleCompletion(moduleID uint, userID uint, completed bool) error {
-	return s.moduleRepo.ChangeModuleCompletion(moduleID, userID, completed)
+func (s *moduleService) ChangeModuleCompletion(moduleID uint, user models.User, completed bool) error {
+	if err := s.moduleRepo.ChangeModuleCompletion(moduleID, user.ID, completed); err != nil {
+		return err
+	}
+
+	module, err := s.moduleRepo.FindById(moduleID)
+	if err != nil {
+		return err
+	}
+	courseId := module.CourseID
+
+	courseProgress, err := s.courseRepo.GetCourseProgress(courseId, user)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.generateCertificateIfEligible(moduleID, user, courseId, courseProgress)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *moduleService) generateCertificateIfEligible(id uint, user models.User, courseId uint, courseProgress *models.CourseProgress) (*string, error) {
+	if int64(courseProgress.TotalModules) == 0 || courseProgress.CompletedModules != courseProgress.TotalModules {
+		return nil, nil
+	}
+
+	course, err := s.courseRepo.FindById(courseId)
+	if err != nil {
+		_ = s.moduleRepo.ChangeModuleCompletion(id, user.ID, false)
+		return nil, err
+	}
+
+	cert, err := s.courseRepo.FindCourseCertificate(user.ID, courseId)
+	if err == nil && cert != nil {
+		return &cert.FileURL, nil
+	}
+
+	img, err := utils.GenerateCertificate(
+		user.Username,
+		course.Title,
+		course.Instructor,
+		time.Now().Format("2006-01-02"),
+	)
+	if err != nil {
+		_ = s.moduleRepo.ChangeModuleCompletion(id, user.ID, false)
+		return nil, err
+	}
+
+	fileName := fmt.Sprintf("cert_user%d_course%d.png", user.ID, courseId)
+	filePath := filepath.Join("uploads/certificates", fileName)
+	if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
+		_ = s.moduleRepo.ChangeModuleCompletion(id, user.ID, false)
+		return nil, err
+	}
+
+	f, err := os.Create(filePath)
+	if err != nil {
+		_ = s.moduleRepo.ChangeModuleCompletion(id, user.ID, false)
+		return nil, err
+	}
+	defer f.Close()
+
+	if err := png.Encode(f, img); err != nil {
+		_ = s.moduleRepo.ChangeModuleCompletion(id, user.ID, false)
+		return nil, err
+	}
+
+	publicURL := os.Getenv("BASE_URL") + "uploads/certificates/" + fileName
+
+	certificate := models.Certificate{
+		UserID:   user.ID,
+		CourseID: courseId,
+		FileURL:  publicURL,
+	}
+	if err := s.courseRepo.CreateCourseCertificate(&certificate); err != nil {
+		_ = s.moduleRepo.ChangeModuleCompletion(id, user.ID, false)
+		return nil, err
+	}
+
+	return &certificate.FileURL, nil
+}
+
+func (s *moduleService) GetCertificateURL(courseID, userID uint) (*string, error) {
+	cert, err := s.courseRepo.FindCourseCertificate(userID, courseID)
+	if err != nil {
+		return nil, err
+	}
+
+	if cert != nil {
+		return &cert.FileURL, nil
+	}
+
+	return nil, nil
 }
