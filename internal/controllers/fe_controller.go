@@ -104,6 +104,70 @@ func (fc *FEController) GetCoursesPage(c *gin.Context) {
 	})
 }
 
+func (fc *FEController) GetMyCoursesPage(c *gin.Context) {
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil || page < 1 {
+		page = 1
+	}
+
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	if err != nil || limit < 1 {
+		limit = 10
+	}
+	search := c.DefaultQuery("q", "")
+
+	query := models.SearchQuery{Q: search, PaginationQuery: models.PaginationQuery{Page: page, Limit: limit}}
+
+	user, userID := getUserFromContext(c)
+
+	courses, pagination, err := fc.cs.GetCoursesByUser(user, query)
+	if err != nil {
+		log.Printf("Failed to get all courses: %v", err)
+		c.HTML(http.StatusInternalServerError, "error.html", gin.H{"Message": "Could not retrieve courses."})
+		return
+	}
+
+	var courseIDs []uint
+	for _, course := range courses {
+		courseIDs = append(courseIDs, course.Course.ID)
+	}
+
+	purchaseStatus, err := fc.cs.GetPurchaseStatusForCourses(courseIDs, userID)
+	if err != nil {
+		log.Printf("ERROR: Failed to get purchase status for user %d: %v", userID, err)
+		purchaseStatus = make(map[uint]bool)
+	}
+
+	courseCards := make([]models.CourseCardData, 0, len(courses))
+	for _, course := range courses {
+		courseCards = append(courseCards, models.CourseCardData{
+			ID:             course.ID,
+			Title:          course.Course.Title,
+			Instructor:     course.Course.Instructor,
+			Purchased:      purchaseStatus[course.Course.ID],
+			Topics:         course.Topics,
+			ThumbnailImage: course.ThumbnailImage,
+			Price:          course.Price,
+		})
+	}
+
+	var pages []int
+	for i := 1; i <= pagination.TotalPages; i++ {
+		pages = append(pages, i)
+	}
+
+	c.HTML(http.StatusOK, "courses.html", models.CoursesPageData{
+		Courses:    courseCards,
+		Page:       pagination.CurrentPage,
+		TotalPages: pagination.TotalPages,
+		TotalItems: pagination.TotalItems,
+		Pages:      pages,
+		Limit:      limit,
+		Search:     search,
+		User:       user,
+	})
+}
+
 func (fc *FEController) GetCourseDetailPage(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
@@ -131,10 +195,26 @@ func (fc *FEController) GetCourseDetailPage(c *gin.Context) {
 		}
 	}
 
+	courseProgress, err := fc.ms.GetCourseProgress(courseID, *user)
+	if err != nil {
+		log.Printf("ERROR: Cannot find course progress")
+		c.HTML(http.StatusNotFound, "error.html", gin.H{"Message": "Cannot find course progress."})
+		return
+	}
+
+	certificateUrl, err := fc.ms.GetCertificateURL(courseID, user.ID)
+	if err != nil {
+		log.Printf("ERROR: Cannot find certificate")
+		c.HTML(http.StatusNotFound, "error.html", gin.H{"Message": "Cannot find certificate."})
+		return
+	}
+
 	c.HTML(http.StatusOK, "course-detail.html", models.CourseDetailPageData{
-		Course:    course,
-		Purchased: purchased,
-		User:      user,
+		Course:         course,
+		CourseProgress: courseProgress,
+		Purchased:      purchased,
+		User:           user,
+		CertificateURL: certificateUrl,
 	})
 }
 
@@ -241,7 +321,7 @@ func (fc *FEController) ToggleModuleCompletion(c *gin.Context) {
 	completedStr := c.PostForm("completed")
 	completed := completedStr == "true"
 
-	err = fc.ms.ChangeModuleCompletion(uint(moduleID), user.ID, completed)
+	err = fc.ms.ChangeModuleCompletion(uint(moduleID), *user, completed)
 	if err != nil {
 		c.HTML(http.StatusInternalServerError, "error.html", gin.H{"Message": "Failed to update completion"})
 		return

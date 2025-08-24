@@ -57,6 +57,8 @@ func RegisterFEoutes(r *gin.Engine) {
 
 	r.GET("/courses", middlewares.FERequireAuth, fc.GetCoursesPage)
 
+	r.GET("/my-courses", middlewares.FERequireAuth, fc.GetMyCoursesPage)
+
 	r.GET("/course/:id", middlewares.FERequireAuth, fc.GetCourseDetailPage)
 
 	r.POST("/course/:id/purchase", middlewares.FERequireAuth, fc.BuyCourseFE)
