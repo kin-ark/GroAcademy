@@ -39,17 +39,16 @@ func (s *moduleService) CreateModule(c *gin.Context, input models.ModuleFormInpu
 
 	var pdfPath string
 	var videoPath string
+	baseUrl := os.Getenv("BASE_URL")
 	if input.PDFContent != nil {
-		baseUrl := os.Getenv("BASE_URL")
-		pdfPath = baseUrl + "uploads/pdf_content/" + input.PDFContent.Filename
+		pdfPath = "uploads/pdf_content/" + input.PDFContent.Filename
 		err := c.SaveUploadedFile(input.PDFContent, pdfPath)
 		if err != nil {
 			return nil, err
 		}
 	}
 	if input.VideoContent != nil {
-		baseUrl := os.Getenv("BASE_URL")
-		videoPath = baseUrl + "uploads/video_content/" + input.VideoContent.Filename
+		videoPath = "uploads/video_content/" + input.VideoContent.Filename
 		err := c.SaveUploadedFile(input.VideoContent, videoPath)
 		if err != nil {
 			return nil, err
@@ -62,11 +61,11 @@ func (s *moduleService) CreateModule(c *gin.Context, input models.ModuleFormInpu
 	}
 
 	if pdfPath != "" {
-		module.PDFContent = pdfPath
+		module.PDFContent = baseUrl + pdfPath
 	}
 
 	if videoPath != "" {
-		module.VideoContent = videoPath
+		module.VideoContent = baseUrl + videoPath
 	}
 
 	module.CourseID = courseId
@@ -94,22 +93,22 @@ func (s *moduleService) EditModule(c *gin.Context, input models.ModuleFormInput,
 
 	if input.PDFContent != nil {
 		baseUrl := os.Getenv("BASE_URL")
-		path := baseUrl + "uploads/pdf_content/" + input.PDFContent.Filename
+		path := "uploads/pdf_content/" + input.PDFContent.Filename
 		if err := c.SaveUploadedFile(input.PDFContent, path); err != nil {
 			return nil, err
 		}
-		existing.PDFContent = path
+		existing.PDFContent = baseUrl + path
 	} else {
 		existing.PDFContent = ""
 	}
 
 	if input.VideoContent != nil {
 		baseUrl := os.Getenv("BASE_URL")
-		path := baseUrl + "uploads/video_content/" + input.VideoContent.Filename
+		path := "uploads/video_content/" + input.VideoContent.Filename
 		if err := c.SaveUploadedFile(input.VideoContent, path); err != nil {
 			return nil, err
 		}
-		existing.VideoContent = path
+		existing.VideoContent = baseUrl + path
 	} else {
 		existing.VideoContent = ""
 	}
