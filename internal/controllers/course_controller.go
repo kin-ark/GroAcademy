@@ -276,7 +276,7 @@ func (cc *CourseController) GetMyCourses(c *gin.Context) {
 	}
 	u := user.(models.User)
 
-	res, err := cc.service.GetCoursesByUser(&u)
+	res, pagination, err := cc.service.GetCoursesByUser(&u, query)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "error",
@@ -287,8 +287,9 @@ func (cc *CourseController) GetMyCourses(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"status":  "success",
-		"message": "Request success",
-		"data":    res,
+		"status":     "success",
+		"message":    "Request success",
+		"data":       res,
+		"pagination": pagination,
 	})
 }

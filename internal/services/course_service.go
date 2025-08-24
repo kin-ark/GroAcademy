@@ -20,7 +20,7 @@ type CourseService interface {
 	GetModulesByCourse(id uint) ([]models.Module, int64, error)
 	DeleteCourseByID(id uint) error
 	BuyCourse(id uint, user *models.User) (*models.BuyCourseResponse, error)
-	GetCoursesByUser(user *models.User) ([]models.MyCoursesResponse, error)
+	GetCoursesByUser(user *models.User, query models.SearchQuery) ([]models.MyCoursesResponse, models.PaginationResponse, error)
 	HasPurchasedCourse(uint, uint) (bool, error)
 	GetPurchaseStatusForCourses(courseIDs []uint, userID uint) (map[uint]bool, error)
 }
@@ -119,7 +119,7 @@ func (s *courseService) EditCourse(c *gin.Context, id uint, input models.CourseF
 		if err := c.SaveUploadedFile(input.ThumbnailImage, path); err != nil {
 			return nil, err
 		}
-		
+
 		baseUrl := os.Getenv("BASE_URL")
 		existing.ThumbnailImage = baseUrl + path
 	} else {
@@ -195,8 +195,29 @@ func (s *courseService) BuyCourse(id uint, user *models.User) (*models.BuyCourse
 	}
 }
 
-func (s *courseService) GetCoursesByUser(user *models.User) ([]models.MyCoursesResponse, error) {
-	return s.courseRepo.GetCoursesByUser(*user)
+func (s *courseService) GetCoursesByUser(user *models.User, query models.SearchQuery) ([]models.MyCoursesResponse, models.PaginationResponse, error) {
+	query.Normalize()
+
+	courses, totalItems, err := s.courseRepo.GetCoursesByUser(*user, query)
+	if err != nil {
+		return nil, models.PaginationResponse{}, err
+	}
+
+	totalPages := int(math.Ceil(float64(totalItems) / float64(query.Limit)))
+	if totalPages == 0 {
+		totalPages = 1
+	}
+	if query.Page > totalPages {
+		query.Page = totalPages
+	}
+
+	pagination := models.PaginationResponse{
+		CurrentPage: query.Page,
+		TotalPages:  totalPages,
+		TotalItems:  int(totalItems),
+	}
+
+	return courses, pagination, nil
 }
 
 func (s *courseService) HasPurchasedCourse(id uint, userId uint) (bool, error) {

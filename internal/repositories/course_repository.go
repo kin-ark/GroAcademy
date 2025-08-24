@@ -18,7 +18,7 @@ type CourseRepository interface {
 	HasPurchasedCourse(courseId uint, userId uint) (bool, error)
 	FindModulesWithProgress(courseID, userID uint) ([]models.ModuleWithIsCompleted, error)
 	BuyCourse(user *models.User, course *models.Course) (*models.Purchase, error)
-	GetCoursesByUser(user models.User) ([]models.MyCoursesResponse, error)
+	GetCoursesByUser(user models.User, query models.SearchQuery) ([]models.MyCoursesResponse, int64, error)
 	GetCourseProgress(id uint, user models.User) (*models.CourseProgress, error)
 	FindPurchasedCourseIDs(userID uint, courseIDs []uint) ([]uint, error)
 }
@@ -157,9 +157,29 @@ func (r *courseRepository) BuyCourse(user *models.User, course *models.Course) (
 	return &purchase, nil
 }
 
-func (r *courseRepository) GetCoursesByUser(user models.User) ([]models.MyCoursesResponse, error) {
+func (r *courseRepository) GetCoursesByUser(user models.User, query models.SearchQuery) ([]models.MyCoursesResponse, int64, error) {
 	var courses []models.MyCoursesResponse
-	base := r.db.Model(&models.Course{})
+	var totalItems int64
+
+	base := r.db.Model(&models.Course{}).
+		Joins("JOIN purchases ON purchases.course_id = courses.id").
+		Where("purchases.user_id = ?", user.ID)
+
+	if err := base.Count(&totalItems).Error; err != nil {
+		return nil, 0, err
+	}
+
+	totalPages := int(math.Ceil(float64(totalItems) / float64(query.Limit)))
+	if totalPages == 0 {
+		totalPages = 1
+	}
+	if query.Page > totalPages {
+		query.Page = totalPages
+	}
+	if query.Page < 1 {
+		query.Page = 1
+	}
+
 	db := base.Select(
 		"courses.*",
 		"purchases.created_at AS purchased_at",
@@ -167,17 +187,16 @@ func (r *courseRepository) GetCoursesByUser(user models.User) ([]models.MyCourse
 			WHEN COUNT(modules.id) = 0 THEN 0
 			ELSE (SUM(CASE WHEN module_progresses.is_completed THEN 1 ELSE 0 END) * 100.0 / COUNT(modules.id))
 		END AS progress_percentage`).
-		Joins("JOIN purchases ON purchases.course_id = courses.id").
 		Joins("LEFT JOIN modules ON modules.course_id = courses.id").
 		Joins("LEFT JOIN module_progresses ON module_progresses.module_id = modules.id AND module_progresses.user_id = ?", user.ID).
-		Where("purchases.user_id = ?", user.ID).
 		Group("courses.id, purchases.created_at")
 
-	if err := db.Scan(&courses).Error; err != nil {
-		return nil, err
+	offset := (query.Page - 1) * query.Limit
+	if err := db.Limit(query.Limit).Offset(offset).Scan(&courses).Error; err != nil {
+		return nil, 0, err
 	}
 
-	return courses, nil
+	return courses, totalItems, nil
 }
 
 func (r *courseRepository) GetCourseProgress(id uint, user models.User) (*models.CourseProgress, error) {
