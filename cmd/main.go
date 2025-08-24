@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"os"
 	"strings"
 
@@ -8,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/kin-ark/GroAcademy/internal/database"
 	"github.com/kin-ark/GroAcademy/internal/routes"
+	"github.com/kin-ark/GroAcademy/internal/seeds"
 )
 
 func main() {
@@ -65,11 +67,11 @@ func main() {
 		port = "8080"
 	}
 
-	// seeder := seeds.NewSeeder(database.DB)
-	// err := seeder.SeedAll()
-	// if err != nil {
-	// 	log.Println(err.Error())
-	// }
+	seeder := seeds.NewSeeder(database.DB)
+	err := seeder.SeedAll()
+	if err != nil {
+		log.Println(err.Error())
+	}
 
 	router.Run(":" + port)
 }
