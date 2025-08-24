@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kin-ark/GroAcademy/internal/controllers"
@@ -51,9 +52,21 @@ func RegisterFEoutes(r *gin.Engine) {
 
 	fc := controllers.NewFEController(userService, courseService, moduleService)
 
+	r.GET("/", func(c *gin.Context) {
+		c.Redirect(http.StatusMovedPermanently, "/login")
+	})
+
 	r.GET("/login", middlewares.RedirectIfAuthenticated, fc.ShowLoginPage)
 
 	r.GET("/register", middlewares.RedirectIfAuthenticated, fc.ShowRegisterPage)
+
+	r.GET("/logout", func(c *gin.Context) {
+		c.SetCookie("Authorization", "", -1, "", "", false, true)
+
+		c.HTML(http.StatusOK, "login.html", gin.H{
+			"message": "Logged out",
+		})
+	})
 
 	r.GET("/courses", middlewares.FERequireAuth, fc.GetCoursesPage)
 
@@ -66,6 +79,12 @@ func RegisterFEoutes(r *gin.Engine) {
 	r.GET("/course/:id/modules", middlewares.FERequireAuth, fc.GetCourseModulesPage)
 	r.GET("/course/:id/modules/:moduleId", middlewares.FERequireAuth, fc.GetCourseModulesPage)
 	r.POST("/course/:id/modules/:moduleId/completion", middlewares.FERequireAuth, fc.ToggleModuleCompletion)
+
+	r.NoRoute(func(c *gin.Context) {
+		c.HTML(http.StatusNotFound, "404.html", gin.H{
+			"title": "Page Not Found",
+		})
+	})
 }
 
 func moduleURL(courseID, moduleID uint) string {
