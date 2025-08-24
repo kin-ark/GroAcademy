@@ -31,6 +31,12 @@
     - API: [http://localhost:8080/api](http://localhost:8080/api)
     - Frontend: [http://localhost:8080](http://localhost:8080)
 
+```
+Jika membutuhkan akun admin untuk FE Admin, silakan gunakan:
+Username: Prince Emory Beahan
+Password: password123
+```
+
 ---
 
 ## Design Pattern yang Digunakan
