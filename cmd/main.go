@@ -65,5 +65,11 @@ func main() {
 		port = "8080"
 	}
 
+	// seeder := seeds.NewSeeder(database.DB)
+	// err := seeder.SeedAll()
+	// if err != nil {
+	// 	log.Println(err.Error())
+	// }
+
 	router.Run(":" + port)
 }

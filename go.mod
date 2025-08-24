@@ -3,19 +3,23 @@ module github.com/kin-ark/GroAcademy
 go 1.25.0
 
 require (
+	github.com/gin-contrib/cors v1.7.6
+	github.com/go-faker/faker/v4 v4.6.1
 	github.com/golang-jwt/jwt/v5 v5.3.0
+	github.com/lib/pq v1.10.9
 	gorm.io/gorm v1.30.1
 )
 
 require (
-	github.com/gin-contrib/cors v1.7.6 // indirect
+	github.com/fogleman/gg v1.3.0 // indirect
+	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/pgx/v5 v5.6.0 // indirect
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/lib/pq v1.10.9 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
+	golang.org/x/image v0.30.0 // indirect
 	golang.org/x/sync v0.16.0 // indirect
 )
 
