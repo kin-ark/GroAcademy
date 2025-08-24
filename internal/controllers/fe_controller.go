@@ -57,7 +57,9 @@ func (fc *FEController) GetCoursesPage(c *gin.Context) {
 	courses, pagination, err := fc.cs.GetAllCourses(query)
 	if err != nil {
 		log.Printf("Failed to get all courses: %v", err)
-		c.HTML(http.StatusInternalServerError, "error.html", gin.H{"Message": "Could not retrieve courses."})
+		c.HTML(http.StatusInternalServerError, "error.html", gin.H{
+			"Message":    "Could not retrieve courses.",
+			"StatusCode": http.StatusInternalServerError})
 		return
 	}
 
@@ -123,7 +125,9 @@ func (fc *FEController) GetMyCoursesPage(c *gin.Context) {
 	courses, pagination, err := fc.cs.GetCoursesByUser(user, query)
 	if err != nil {
 		log.Printf("Failed to get all courses: %v", err)
-		c.HTML(http.StatusInternalServerError, "error.html", gin.H{"Message": "Could not retrieve courses."})
+		c.HTML(http.StatusInternalServerError, "error.html", gin.H{
+			"Message":    "Could not retrieve courses.",
+			"StatusCode": http.StatusInternalServerError})
 		return
 	}
 
@@ -171,7 +175,9 @@ func (fc *FEController) GetMyCoursesPage(c *gin.Context) {
 func (fc *FEController) GetCourseDetailPage(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.HTML(http.StatusBadRequest, "error.html", gin.H{"Message": "Invalid course ID."})
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"Message":    "Invalid course ID.",
+			"StatusCode": http.StatusBadRequest})
 		return
 	}
 	courseID := uint(id)
@@ -179,7 +185,9 @@ func (fc *FEController) GetCourseDetailPage(c *gin.Context) {
 	course, err := fc.cs.GetCourseByID(courseID)
 	if err != nil {
 		log.Printf("ERROR: Course with ID %d not found: %v", courseID, err)
-		c.HTML(http.StatusNotFound, "error.html", gin.H{"Message": "Course not found."})
+		c.HTML(http.StatusNotFound, "error.html", gin.H{
+			"Message":    "Course not found.",
+			"StatusCode": http.StatusNotFound})
 		return
 	}
 
@@ -198,14 +206,18 @@ func (fc *FEController) GetCourseDetailPage(c *gin.Context) {
 	courseProgress, err := fc.ms.GetCourseProgress(courseID, *user)
 	if err != nil {
 		log.Printf("ERROR: Cannot find course progress")
-		c.HTML(http.StatusNotFound, "error.html", gin.H{"Message": "Cannot find course progress."})
+		c.HTML(http.StatusNotFound, "error.html", gin.H{
+			"Message":    "Cannot find course progress.",
+			"StatusCode": http.StatusNotFound})
 		return
 	}
 
 	certificateUrl, err := fc.ms.GetCertificateURL(courseID, user.ID)
 	if err != nil {
 		log.Printf("ERROR: Cannot find certificate")
-		c.HTML(http.StatusNotFound, "error.html", gin.H{"Message": "Cannot find certificate."})
+		c.HTML(http.StatusNotFound, "error.html", gin.H{
+			"Message":    "Cannot find certificate.",
+			"StatusCode": http.StatusNotFound})
 		return
 	}
 
@@ -221,21 +233,28 @@ func (fc *FEController) GetCourseDetailPage(c *gin.Context) {
 func (fc *FEController) BuyCourseFE(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.HTML(http.StatusBadRequest, "error.html", gin.H{"Message": "Invalid course ID."})
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"Message":    "Invalid course ID.",
+			"StatusCode": http.StatusBadRequest})
 		return
 	}
 	courseID := uint(id)
 
 	user, _ := getUserFromContext(c)
 	if user == nil {
-		c.HTML(http.StatusBadRequest, "error.html", gin.H{"Message": "Cannot get User"})
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"Message":    "Cannot get User",
+			"StatusCode": http.StatusBadRequest})
 		return
 	}
 
 	_, err = fc.cs.BuyCourse(courseID, user)
 	if err != nil {
 		log.Println(err.Error())
-		c.HTML(http.StatusInternalServerError, "error.html", gin.H{"Message": "Something wrong"})
+		c.HTML(http.StatusInternalServerError, "error.html", gin.H{
+			"Message":    err.Error(),
+			"StatusCode": http.StatusInternalServerError,
+		})
 		return
 	}
 
@@ -245,30 +264,40 @@ func (fc *FEController) BuyCourseFE(c *gin.Context) {
 func (fc *FEController) GetCourseModulesPage(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.HTML(http.StatusBadRequest, "error.html", gin.H{"Message": "Invalid course ID."})
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"Message":    "Invalid course ID.",
+			"StatusCode": http.StatusBadRequest})
 		return
 	}
 	courseID := uint(id)
 
 	user, _ := getUserFromContext(c)
 	if user == nil {
-		c.HTML(http.StatusBadRequest, "error.html", gin.H{"Message": "Cannot get User"})
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"Message":    "Cannot get User",
+			"StatusCode": http.StatusBadRequest})
 		return
 	}
 
 	course, err := fc.cs.GetCourseByID(courseID)
 	if err != nil {
-		c.HTML(http.StatusBadRequest, "error.html", gin.H{"Message": "Something wrong"})
+		c.HTML(http.StatusInternalServerError, "error.html", gin.H{
+			"Message":    err.Error(),
+			"StatusCode": http.StatusInternalServerError})
 	}
 
 	modules, err := fc.ms.GetModules(*user, courseID, models.PaginationQuery{})
 	if err != nil {
-		c.HTML(http.StatusBadRequest, "error.html", gin.H{"Message": "Something wrong"})
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"Message":    err.Error(),
+			"StatusCode": http.StatusInternalServerError})
 	}
 
 	courseProgress, err := fc.ms.GetCourseProgress(courseID, *user)
 	if err != nil {
-		c.HTML(http.StatusBadRequest, "error.html", gin.H{"Message": "Something wrong"})
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"Message":    err.Error(),
+			"StatusCode": http.StatusInternalServerError})
 	}
 
 	var currentModule *models.ModuleWithIsCompleted
@@ -302,19 +331,25 @@ func (fc *FEController) GetCourseModulesPage(c *gin.Context) {
 func (fc *FEController) ToggleModuleCompletion(c *gin.Context) {
 	courseID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.HTML(http.StatusBadRequest, "error.html", gin.H{"Message": "Invalid course ID."})
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"Message":    "Invalid course ID.",
+			"StatusCode": http.StatusBadRequest})
 		return
 	}
 
 	moduleID, err := strconv.ParseUint(c.Param("moduleId"), 10, 32)
 	if err != nil {
-		c.HTML(http.StatusBadRequest, "error.html", gin.H{"Message": "Invalid module ID."})
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"Message":    "Invalid module ID.",
+			"StatusCode": http.StatusBadRequest})
 		return
 	}
 
 	user, _ := getUserFromContext(c)
 	if user == nil {
-		c.HTML(http.StatusBadRequest, "error.html", gin.H{"Message": "Cannot get User"})
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			"Message":    "Cannot get User",
+			"StatusCode": http.StatusBadRequest})
 		return
 	}
 
@@ -323,7 +358,9 @@ func (fc *FEController) ToggleModuleCompletion(c *gin.Context) {
 
 	err = fc.ms.ChangeModuleCompletion(uint(moduleID), *user, completed)
 	if err != nil {
-		c.HTML(http.StatusInternalServerError, "error.html", gin.H{"Message": "Failed to update completion"})
+		c.HTML(http.StatusInternalServerError, "error.html", gin.H{
+			"Message":    "Failed to update completion",
+			"StatusCode": http.StatusInternalServerError})
 		return
 	}
 

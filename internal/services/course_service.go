@@ -178,7 +178,7 @@ func (s *courseService) BuyCourse(id uint, user *models.User) (*models.BuyCourse
 		}
 
 		if course.Price > user.Balance {
-			return nil, errors.New(user.Username + "balance is not enough to buy this course: " + fmt.Sprint(id))
+			return nil, errors.New(user.Username + " balance is not enough to buy this course: " + fmt.Sprint(id))
 		}
 
 		transaction, err := s.courseRepo.BuyCourse(user, course)
