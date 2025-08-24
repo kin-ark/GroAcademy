@@ -161,6 +161,11 @@ func (s *moduleService) DeleteModuleByID(id uint) error {
 }
 
 func (s *moduleService) GetModules(user models.User, courseID uint, q models.PaginationQuery) ([]models.ModuleWithIsCompleted, models.PaginationResponse, error) {
+	_, err := s.courseRepo.FindById(courseID)
+	if err != nil {
+		return nil, models.PaginationResponse{}, err
+	}
+	
 	q.Normalize()
 	var res []models.ModuleWithIsCompleted
 
@@ -314,6 +319,11 @@ func (s *moduleService) MarkModuleAsComplete(id uint, user models.User) (*models
 }
 
 func (s *moduleService) ReorderModules(req models.ReorderModulesRequest, courseID uint) error {
+	_, err := s.courseRepo.FindById(courseID)
+	if err != nil {
+		return err
+	}
+
 	if len(req.ModuleOrder) == 0 {
 		return errors.New("module_order cannot be empty")
 	}
