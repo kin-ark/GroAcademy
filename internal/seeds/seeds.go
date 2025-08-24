@@ -2,12 +2,18 @@ package seeds
 
 import (
 	"fmt"
+	"image/png"
 	"log"
 	"math/rand"
+	"os"
+	"path/filepath"
+	"time"
 
 	"github.com/go-faker/faker/v4"
 	"github.com/kin-ark/GroAcademy/internal/database"
 	"github.com/kin-ark/GroAcademy/internal/models"
+	"github.com/kin-ark/GroAcademy/internal/repositories"
+	"github.com/kin-ark/GroAcademy/internal/utils"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -269,18 +275,11 @@ func (s *Seeder) seedCertificates(count int) error {
 		return err
 	}
 
-	certificates := make([]models.Certificate, len(completedCourses))
-
-	for i, cc := range completedCourses {
-		certificates[i] = models.Certificate{
-			UserID:   cc.UserID,
-			CourseID: cc.CourseID,
-			FileURL:  faker.URL(),
+	for _, cc := range completedCourses {
+		err := s.generateCertificate(cc.CourseID, cc.UserID)
+		if err != nil {
+			log.Println(err.Error())
 		}
-	}
-
-	if len(certificates) > 0 {
-		return s.db.Create(&certificates).Error
 	}
 
 	return nil
@@ -293,4 +292,57 @@ func SeedDatabase() error {
 
 	seeder := NewSeeder(database.DB)
 	return seeder.SeedAll()
+}
+
+func (s *Seeder) generateCertificate(courseId, userId uint) error {
+	courseRepo := repositories.NewCourseRepository()
+	userRepo := repositories.NewUserRepository()
+
+	course, err := courseRepo.FindById(courseId)
+	if err != nil {
+		return err
+	}
+
+	user, err := userRepo.FindById(userId)
+	if err != nil {
+		return err
+	}
+
+	img, err := utils.GenerateCertificate(
+		user.Username,
+		course.Title,
+		course.Instructor,
+		time.Now().Format("2006-01-02"),
+	)
+	if err != nil {
+		return err
+	}
+	fileName := fmt.Sprintf("cert_user%d_course%d.png", user.ID, courseId)
+	filePath := filepath.Join("uploads/certificates", fileName)
+	if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
+		return err
+	}
+	f, err := os.Create(filePath)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	if err := png.Encode(f, img); err != nil {
+		return err
+	}
+
+	publicURL := os.Getenv("BASE_URL") + "uploads/certificates/" + fileName
+
+	certificate := models.Certificate{
+		UserID:   user.ID,
+		CourseID: courseId,
+		FileURL:  publicURL,
+	}
+
+	if err := courseRepo.CreateCourseCertificate(&certificate); err != nil {
+		return err
+	}
+
+	return nil
 }
