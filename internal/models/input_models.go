@@ -103,3 +103,12 @@ type CourseDetailPageData struct {
 	Purchased bool
 	User      *User
 }
+
+type CourseModulesPageData struct {
+	Course         *Course
+	User           *User
+	Modules        []ModuleWithIsCompleted
+	CourseProgress CourseProgress
+	CurrentModule  *ModuleWithIsCompleted
+	ContentType    string
+}

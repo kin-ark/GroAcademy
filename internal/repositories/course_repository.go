@@ -6,7 +6,6 @@ import (
 	"github.com/kin-ark/GroAcademy/internal/database"
 	"github.com/kin-ark/GroAcademy/internal/models"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 type CourseRepository interface {
@@ -153,26 +152,6 @@ func (r *courseRepository) BuyCourse(user *models.User, course *models.Course) (
 	}
 	if err := r.db.Create(&purchase).Error; err != nil {
 		return nil, err
-	}
-
-	var modules []models.Module
-	if err := r.db.Where("course_id = ?", course.ID).Find(&modules).Error; err != nil {
-		return nil, err
-	}
-
-	var progresses []models.ModuleProgress
-	for _, m := range modules {
-		progresses = append(progresses, models.ModuleProgress{
-			UserID:      user.ID,
-			ModuleID:    m.ID,
-			IsCompleted: false,
-		})
-	}
-
-	if len(progresses) > 0 {
-		if err := r.db.Clauses(clause.OnConflict{DoNothing: true}).Create(&progresses).Error; err != nil {
-			return nil, err
-		}
 	}
 
 	return &purchase, nil

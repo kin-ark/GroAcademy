@@ -16,7 +16,7 @@ type ModuleRepository interface {
 	Delete(*models.Module) error
 	FindById(uint) (*models.Module, error)
 	IsModuleCompleted(id uint, userId uint) (bool, error)
-	MarkModuleAsComplete(moduleID uint, userID uint) error
+	ChangeModuleCompletion(moduleID uint, userID uint, completed bool) error
 	ReorderModules(courseID uint, orders []models.ModuleOrder) error
 	GetModuleIDsByCourse(courseID uint, ids *[]uint) error
 }
@@ -93,10 +93,10 @@ func (r *moduleRepository) IsModuleCompleted(id uint, userId uint) (bool, error)
 	return isCompleted, nil
 }
 
-func (r *moduleRepository) MarkModuleAsComplete(moduleID uint, userID uint) error {
+func (r *moduleRepository) ChangeModuleCompletion(moduleID uint, userID uint, completed bool) error {
 	result := r.db.Model(&models.ModuleProgress{}).
 		Where("module_id = ? AND user_id = ?", moduleID, userID).
-		Update("is_completed", true)
+		Update("is_completed", completed)
 
 	if result.Error != nil {
 		return result.Error

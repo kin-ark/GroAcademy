@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -135,4 +136,121 @@ func (fc *FEController) GetCourseDetailPage(c *gin.Context) {
 		Purchased: purchased,
 		User:      user,
 	})
+}
+
+func (fc *FEController) BuyCourseFE(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{"Message": "Invalid course ID."})
+		return
+	}
+	courseID := uint(id)
+
+	user, _ := getUserFromContext(c)
+	if user == nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{"Message": "Cannot get User"})
+		return
+	}
+
+	_, err = fc.cs.BuyCourse(courseID, user)
+	if err != nil {
+		log.Println(err.Error())
+		c.HTML(http.StatusInternalServerError, "error.html", gin.H{"Message": "Something wrong"})
+		return
+	}
+
+	c.Redirect(http.StatusFound, "/course/"+fmt.Sprint(courseID)+"/modules")
+}
+
+func (fc *FEController) GetCourseModulesPage(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{"Message": "Invalid course ID."})
+		return
+	}
+	courseID := uint(id)
+
+	user, _ := getUserFromContext(c)
+	if user == nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{"Message": "Cannot get User"})
+		return
+	}
+
+	course, err := fc.cs.GetCourseByID(courseID)
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{"Message": "Something wrong"})
+	}
+
+	modules, err := fc.ms.GetModules(*user, courseID, models.PaginationQuery{})
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{"Message": "Something wrong"})
+	}
+
+	courseProgress, err := fc.ms.GetCourseProgress(courseID, *user)
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{"Message": "Something wrong"})
+	}
+
+	var currentModule *models.ModuleWithIsCompleted
+	if moduleIDStr := c.Param("moduleId"); moduleIDStr != "" {
+		moduleID, err := strconv.ParseUint(moduleIDStr, 10, 32)
+		if err == nil {
+			for i := range modules {
+				if modules[i].ID == uint(moduleID) {
+					currentModule = &modules[i]
+					break
+				}
+			}
+		}
+	}
+
+	contentType := c.Query("type")
+	if contentType == "" {
+		contentType = "pdf"
+	}
+
+	c.HTML(http.StatusOK, "course-modules.html", models.CourseModulesPageData{
+		Course:         course,
+		User:           user,
+		Modules:        modules,
+		CourseProgress: *courseProgress,
+		CurrentModule:  currentModule,
+		ContentType:    contentType,
+	})
+}
+
+func (fc *FEController) ToggleModuleCompletion(c *gin.Context) {
+	courseID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{"Message": "Invalid course ID."})
+		return
+	}
+
+	moduleID, err := strconv.ParseUint(c.Param("moduleId"), 10, 32)
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{"Message": "Invalid module ID."})
+		return
+	}
+
+	user, _ := getUserFromContext(c)
+	if user == nil {
+		c.HTML(http.StatusBadRequest, "error.html", gin.H{"Message": "Cannot get User"})
+		return
+	}
+
+	completedStr := c.PostForm("completed")
+	completed := completedStr == "true"
+
+	err = fc.ms.ChangeModuleCompletion(uint(moduleID), user.ID, completed)
+	if err != nil {
+		c.HTML(http.StatusInternalServerError, "error.html", gin.H{"Message": "Failed to update completion"})
+		return
+	}
+
+	redirectURL := fmt.Sprintf("/course/%d/modules/%d", courseID, moduleID)
+	if contentType := c.Query("type"); contentType != "" {
+		redirectURL += "?type=" + contentType
+	}
+
+	c.Redirect(http.StatusSeeOther, redirectURL)
 }

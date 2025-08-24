@@ -20,6 +20,8 @@ type ModuleService interface {
 	GetModuleByID(id uint, user models.User) (*models.ModuleWithIsCompleted, error)
 	MarkModuleAsComplete(id uint, user models.User) (*models.MarkModuleResponse, error)
 	ReorderModules(req models.ReorderModulesRequest, courseID uint) error
+	GetCourseProgress(id uint, user models.User) (*models.CourseProgress, error)
+	ChangeModuleCompletion(moduleID uint, userID uint, completed bool) error
 }
 
 type moduleService struct {
@@ -243,7 +245,7 @@ func (s *moduleService) GetModuleByID(id uint, user models.User) (*models.Module
 }
 
 func (s *moduleService) MarkModuleAsComplete(id uint, user models.User) (*models.MarkModuleResponse, error) {
-	err := s.moduleRepo.MarkModuleAsComplete(id, user.ID)
+	err := s.moduleRepo.ChangeModuleCompletion(id, user.ID, true)
 	if err != nil {
 		return nil, err
 	}
@@ -329,4 +331,12 @@ func (s *moduleService) ReorderModules(req models.ReorderModulesRequest, courseI
 	}
 
 	return s.moduleRepo.ReorderModules(courseID, parsedOrders)
+}
+
+func (s *moduleService) GetCourseProgress(id uint, user models.User) (*models.CourseProgress, error) {
+	return s.courseRepo.GetCourseProgress(id, user)
+}
+
+func (s *moduleService) ChangeModuleCompletion(moduleID uint, userID uint, completed bool) error {
+	return s.moduleRepo.ChangeModuleCompletion(moduleID, userID, completed)
 }

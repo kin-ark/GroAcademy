@@ -1,21 +1,30 @@
 package routes
 
 import (
-	"log"
+	"fmt"
 	"html/template"
+	"log"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kin-ark/GroAcademy/internal/controllers"
 	"github.com/kin-ark/GroAcademy/internal/middlewares"
+	"github.com/kin-ark/GroAcademy/internal/models"
 	"github.com/kin-ark/GroAcademy/internal/repositories"
 	"github.com/kin-ark/GroAcademy/internal/services"
 )
 
 func SetupHTMLRenderer(router *gin.Engine) {
 	funcMap := template.FuncMap{
-		"add": func(a, b int) int { return a + b },
-		"sub": func(a, b int) int { return a - b },
-		"mul": func(a, b int) int { return a * b },
+		"add":                 func(a, b int) int { return a + b },
+		"sub":                 func(a, b int) int { return a - b },
+		"mul":                 func(a, b int) int { return a * b },
+		"moduleURL":           moduleURL,
+		"moduleURLWithType":   moduleURLWithType,
+		"moduleCompletionURL": moduleCompletionURL,
+		"moduleTypeLabel":     moduleTypeLabel,
+		"hasMultipleContent":  hasMultipleContent,
+		"shouldShowPDF":       shouldShowPDF,
+		"shouldShowVideo":     shouldShowVideo,
 	}
 
 	tmpl := template.New("").Funcs(funcMap)
@@ -49,4 +58,64 @@ func RegisterFEoutes(r *gin.Engine) {
 	r.GET("/courses", middlewares.FERequireAuth, fc.GetCoursesPage)
 
 	r.GET("/course/:id", middlewares.FERequireAuth, fc.GetCourseDetailPage)
+
+	r.POST("/course/:id/purchase", middlewares.FERequireAuth, fc.BuyCourseFE)
+
+	r.GET("/course/:id/modules", middlewares.FERequireAuth, fc.GetCourseModulesPage)
+	r.GET("/course/:id/modules/:moduleId", middlewares.FERequireAuth, fc.GetCourseModulesPage)
+	r.POST("/course/:id/modules/:moduleId/completion", middlewares.FERequireAuth, fc.ToggleModuleCompletion)
+}
+
+func moduleURL(courseID, moduleID uint) string {
+	return fmt.Sprintf("/course/%d/modules/%d", courseID, moduleID)
+}
+
+func moduleURLWithType(courseID, moduleID uint, contentType string) string {
+	return fmt.Sprintf("/course/%d/modules/%d?type=%s", courseID, moduleID, contentType)
+}
+
+func moduleCompletionURL(courseID, moduleID uint) string {
+	return fmt.Sprintf("/course/%d/modules/%d/completion", courseID, moduleID)
+}
+
+func moduleTypeLabel(module models.ModuleWithIsCompleted) string {
+	hasPDF := module.PDFContent != ""
+	hasVideo := module.VideoContent != ""
+
+	if hasPDF && hasVideo {
+		return "PDF + Video"
+	} else if hasPDF {
+		return "PDF Content"
+	} else if hasVideo {
+		return "Video Content"
+	}
+	return "No Content"
+}
+
+func hasMultipleContent(module models.ModuleWithIsCompleted) bool {
+	return module.PDFContent != "" && module.VideoContent != ""
+}
+
+func shouldShowPDF(module models.ModuleWithIsCompleted, contentType string) bool {
+	if module.PDFContent == "" {
+		return false
+	}
+
+	if hasMultipleContent(module) {
+		return contentType != "video"
+	}
+
+	return true
+}
+
+func shouldShowVideo(module models.ModuleWithIsCompleted, contentType string) bool {
+	if module.VideoContent == "" {
+		return false
+	}
+
+	if hasMultipleContent(module) {
+		return contentType == "video"
+	}
+
+	return true
 }

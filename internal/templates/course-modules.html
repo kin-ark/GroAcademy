@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Course.Title}} - Modules | GroAcademy</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="layout">
+        {{template "sidebar" .User}}
+        <main class="content">
+            <div class="back-navigation">
+                <a href="/courses" class="back-btn">
+                    <span>&larr;</span> Back to Courses
+                </a>
+            </div>
+
+            <div class="course-modules-container">
+                <div class="modules-sidebar">
+                    <div class="course-info-header">
+                        <h2>{{.Course.Title}}</h2>
+                        <p class="course-instructor">By {{.Course.Instructor}}</p>
+                    </div>
+
+                    <div class="progress-section">
+                        <h3>Course Progress</h3>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: {{.CourseProgress.Percentage}}%"></div>
+                        </div>
+                        <div class="progress-text">
+                            {{.CourseProgress.CompletedModules}}/{{.CourseProgress.TotalModules}} modules completed ({{printf "%.0f" .CourseProgress.Percentage}}%)
+                        </div>
+                    </div>
+
+                    <div class="modules-section">
+                        <h3>Course Modules</h3>
+                        <ul class="modules-list">
+                            {{range $index, $module := .Modules}}
+                            <li class="module-item {{if $module.IsCompleted}}completed{{end}} {{if and $.CurrentModule (eq $.CurrentModule.ID $module.ID)}}active{{end}}">
+                                <a href="{{moduleURL $.Course.ID $module.ID}}" class="module-link">
+                                    <div class="module-content-item">
+                                        <div class="module-info">
+                                            <div class="module-title">{{$module.Title}}</div>
+                                            <div class="module-type">{{moduleTypeLabel $module}}</div>
+                                        </div>
+                                        <div class="completion-checkbox">
+                                            <form method="POST" action="{{moduleCompletionURL $.Course.ID $module.ID}}" style="display: inline;">
+                                                <input type="hidden" name="completed" value="{{not $module.IsCompleted}}">
+                                                <input type="checkbox" 
+                                                       {{if $module.IsCompleted}}checked{{end}}
+                                                       onchange="this.form.submit()">
+                                            </form>
+                                        </div>
+                                    </div>
+                                </a>
+                            </li>
+                            {{end}}
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="main-content">
+                    {{if not .CurrentModule}}
+                        <div class="content-header">
+                            <h1>Welcome to {{.Course.Title}}</h1>
+                            <div class="content-meta">
+                                <span>Select a module to start learning</span>
+                            </div>
+                        </div>
+                        <div class="content-viewer">
+                            <div class="welcome-content">
+                                <h2>Ready to Learn?</h2>
+                                <p>Select any module from the sidebar to begin your learning journey.</p>
+                                <p>Track your progress and mark modules as complete as you go!</p>
+                            </div>
+                        </div>
+                    {{else}}
+                        <div class="content-header">
+                            <h1>{{.CurrentModule.Title}}</h1>
+                            <div class="content-meta">
+                                <span>{{moduleTypeLabel .CurrentModule}}</span>
+                            </div>
+                        </div>
+
+                        {{if hasMultipleContent .CurrentModule}}
+                        <div class="content-tabs">
+                            <a href="{{moduleURLWithType .Course.ID .CurrentModule.ID "pdf"}}" class="tab-btn {{if ne .ContentType "video"}}active{{end}}">PDF</a>
+                            <a href="{{moduleURLWithType .Course.ID .CurrentModule.ID "video"}}" class="tab-btn {{if eq .ContentType "video"}}active{{end}}">Video</a>
+                        </div>
+                        {{end}}
+
+                        <div class="module-content-area">
+                            {{if shouldShowVideo .CurrentModule .ContentType}}
+                                <video class="video-viewer" controls>
+                                    <source src="{{.CurrentModule.VideoContent}}" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                            
+                            {{else if shouldShowPDF .CurrentModule .ContentType}}
+                                <iframe src="{{.CurrentModule.PDFContent}}" class="pdf-viewer"></iframe>
+                            
+                            {{else}}
+                                <div class="text-content">
+                                    <div class="text-content-inner">
+                                        <h3>{{.CurrentModule.Title}}</h3>
+                                        {{if .CurrentModule.Description}}
+                                            <div class="module-description">{{.CurrentModule.Description}}</div>
+                                        {{end}}
+                                        <p class="no-media-message">This module has no content yet. Please contact the admin to add the content</p>
+                                    </div>
+                                </div>
+                            {{end}}
+                        </div>
+
+                        <div class="completion-actions">
+                            <div class="completion-status {{if not .CurrentModule.IsCompleted}}incomplete{{end}}">
+                                {{if .CurrentModule.IsCompleted}}
+                                    Module Completed
+                                {{else}}
+                                    Module not completed
+                                {{end}}
+                            </div>
+                            <form method="POST" action="{{moduleCompletionURL .Course.ID .CurrentModule.ID}}">
+                                <input type="hidden" name="completed" value="{{not .CurrentModule.IsCompleted}}">
+                                <button type="submit" class="mark-complete-btn {{if .CurrentModule.IsCompleted}}incomplete{{end}}">
+                                    {{if .CurrentModule.IsCompleted}}
+                                        Mark as Incomplete
+                                    {{else}}
+                                        Mark as Complete
+                                    {{end}}
+                                </button>
+                            </form>
+                        </div>
+                    {{end}}
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
