@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"image/png"
+	"math"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -19,7 +20,7 @@ type ModuleService interface {
 	CreateModule(*gin.Context, models.ModuleFormInput, uint) (*models.Module, error)
 	EditModule(*gin.Context, models.ModuleFormInput, uint) (*models.Module, error)
 	DeleteModuleByID(uint) error
-	GetModules(user models.User, courseID uint, q models.PaginationQuery) ([]models.ModuleWithIsCompleted, error)
+	GetModules(user models.User, courseID uint, q models.PaginationQuery) ([]models.ModuleWithIsCompleted, models.PaginationResponse, error)
 	BuildModuleResponses(modules []models.ModuleWithIsCompleted) []models.ModuleResponse
 	GetModuleByID(id uint, user models.User) (*models.ModuleWithIsCompleted, error)
 	MarkModuleAsComplete(id uint, user models.User) (*models.MarkModuleResponse, error)
@@ -159,40 +160,65 @@ func (s *moduleService) DeleteModuleByID(id uint) error {
 	return nil
 }
 
-func (s *moduleService) GetModules(user models.User, courseID uint, q models.PaginationQuery) ([]models.ModuleWithIsCompleted, error) {
+func (s *moduleService) GetModules(user models.User, courseID uint, q models.PaginationQuery) ([]models.ModuleWithIsCompleted, models.PaginationResponse, error) {
+	q.Normalize()
 	var res []models.ModuleWithIsCompleted
 
 	hasPurchased, err := s.courseRepo.HasPurchasedCourse(courseID, user.ID)
 	if err != nil {
-		return nil, err
+		return nil, models.PaginationResponse{}, err
 	}
 
-	if !hasPurchased {
-		if user.Role != "admin" {
-			return nil, errors.New(user.Username + " has not bought this course!")
-		} else {
-			modules, _, err := s.courseRepo.FindModulesByCourseID(courseID)
-			if err != nil {
-				return nil, err
-			}
+	var totalItems int64
 
-			for _, module := range modules {
-				res = append(res, models.ModuleWithIsCompleted{
-					Module:      module,
-					IsCompleted: false,
-				})
-			}
+	if !hasPurchased && user.Role != "admin" {
+		return nil, models.PaginationResponse{}, errors.New(user.Username + " has not bought this course!")
+	}
 
-			return res, nil
+	if !hasPurchased && user.Role == "admin" {
+		modules, count, err := s.courseRepo.FindModulesByCourseIDPaginated(courseID, q)
+		if err != nil {
+			return nil, models.PaginationResponse{}, err
+		}
+		totalItems = count
+
+		for _, module := range modules {
+			res = append(res, models.ModuleWithIsCompleted{
+				Module:      module,
+				IsCompleted: false,
+			})
 		}
 	} else {
-		res, err = s.courseRepo.FindModulesWithProgress(courseID, user.ID)
+		modules, count, err := s.courseRepo.FindModulesWithProgressPaginated(courseID, user.ID, q)
 		if err != nil {
-			return nil, err
+			return nil, models.PaginationResponse{}, err
 		}
-
-		return res, nil
+		res = modules
+		totalItems = count
 	}
+
+	if q.Limit <= 0 {
+		q.Limit = 10
+	}
+	if q.Page < 1 {
+		q.Page = 1
+	}
+
+	totalPages := int(math.Ceil(float64(totalItems) / float64(q.Limit)))
+	if totalPages == 0 {
+		totalPages = 1
+	}
+	if q.Page > totalPages {
+		q.Page = totalPages
+	}
+
+	pagination := models.PaginationResponse{
+		CurrentPage: q.Page,
+		TotalPages:  totalPages,
+		TotalItems:  int(totalItems),
+	}
+
+	return res, pagination, nil
 }
 
 func (s *moduleService) BuildModuleResponses(modules []models.ModuleWithIsCompleted) []models.ModuleResponse {

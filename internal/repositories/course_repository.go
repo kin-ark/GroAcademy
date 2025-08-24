@@ -15,8 +15,9 @@ type CourseRepository interface {
 	FindById(id uint) (*models.Course, error)
 	GetAllCourses(query models.SearchQuery) ([]models.CourseWithModulesCount, int64, error)
 	FindModulesByCourseID(id uint) ([]models.Module, int64, error)
+	FindModulesByCourseIDPaginated(id uint, q models.PaginationQuery) ([]models.Module, int64, error)
 	HasPurchasedCourse(courseId uint, userId uint) (bool, error)
-	FindModulesWithProgress(courseID, userID uint) ([]models.ModuleWithIsCompleted, error)
+	FindModulesWithProgressPaginated(courseID, userID uint, q models.PaginationQuery) ([]models.ModuleWithIsCompleted, int64, error)
 	BuyCourse(user *models.User, course *models.Course) (*models.Purchase, error)
 	GetCoursesByUser(user models.User, query models.SearchQuery) ([]models.MyCoursesResponse, int64, error)
 	GetCourseProgress(id uint, user models.User) (*models.CourseProgress, error)
@@ -111,6 +112,45 @@ func (r *courseRepository) FindModulesByCourseID(id uint) ([]models.Module, int6
 	return modules, count, nil
 }
 
+func (r *courseRepository) FindModulesByCourseIDPaginated(id uint, q models.PaginationQuery) ([]models.Module, int64, error) {
+	var modules []models.Module
+	var totalItems int64
+
+	if q.Limit <= 0 {
+		q.Limit = 10
+	}
+	if q.Page < 1 {
+		q.Page = 1
+	}
+
+	if err := r.db.Model(&models.Module{}).
+		Where("course_id = ?", id).
+		Count(&totalItems).Error; err != nil {
+		return nil, 0, err
+	}
+
+	totalPages := int(math.Ceil(float64(totalItems) / float64(q.Limit)))
+	if totalPages == 0 {
+		totalPages = 1
+	}
+	if q.Page > totalPages {
+		q.Page = totalPages
+	}
+
+	offset := (q.Page - 1) * q.Limit
+
+	if err := r.db.Model(&models.Module{}).
+		Where("course_id = ?", id).
+		Order(`"order" ASC`).
+		Limit(q.Limit).
+		Offset(offset).
+		Find(&modules).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return modules, totalItems, nil
+}
+
 func (r *courseRepository) HasPurchasedCourse(courseId uint, userId uint) (bool, error) {
 	var count int64
 
@@ -124,21 +164,37 @@ func (r *courseRepository) HasPurchasedCourse(courseId uint, userId uint) (bool,
 	return count > 0, nil
 }
 
-func (r *courseRepository) FindModulesWithProgress(courseID, userID uint) ([]models.ModuleWithIsCompleted, error) {
+func (r *courseRepository) FindModulesWithProgressPaginated(courseID, userID uint, q models.PaginationQuery) ([]models.ModuleWithIsCompleted, int64, error) {
 	var modules []models.ModuleWithIsCompleted
+	var totalItems int64
 
-	err := r.db.Model(&models.Module{}).
+	base := r.db.Model(&models.Module{}).
 		Select("modules.*, module_progresses.is_completed").
 		Joins("LEFT JOIN module_progresses ON module_progresses.module_id = modules.id AND module_progresses.user_id = ?", userID).
 		Where("modules.course_id = ?", courseID).
-		Order("modules.order ASC").
-		Scan(&modules).Error
+		Order("modules.order ASC")
 
-	if err != nil {
-		return nil, err
+	if err := base.Count(&totalItems).Error; err != nil {
+		return nil, 0, err
 	}
 
-	return modules, nil
+	totalPages := int(math.Ceil(float64(totalItems) / float64(q.Limit)))
+	if totalPages == 0 {
+		totalPages = 1
+	}
+	if q.Page > totalPages {
+		q.Page = totalPages
+	}
+	if q.Page < 1 {
+		q.Page = 1
+	}
+
+	offset := (q.Page - 1) * q.Limit
+	if err := base.Limit(q.Limit).Offset(offset).Scan(&modules).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return modules, totalItems, nil
 }
 
 func (r *courseRepository) BuyCourse(user *models.User, course *models.Course) (*models.Purchase, error) {

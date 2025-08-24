@@ -176,7 +176,7 @@ func (mc *ModuleController) GetModules(c *gin.Context) {
 	}
 	u := user.(models.User)
 
-	result, err := mc.service.GetModules(u, uint(id), query)
+	result, pagination, err := mc.service.GetModules(u, uint(id), query)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"status":  "error",
@@ -189,9 +189,10 @@ func (mc *ModuleController) GetModules(c *gin.Context) {
 	data := mc.service.BuildModuleResponses(result)
 
 	c.JSON(http.StatusOK, gin.H{
-		"status":  "success",
-		"message": "Get Modules success",
-		"data":    data,
+		"status":     "success",
+		"message":    "Get Modules success",
+		"data":       data,
+		"pagination": pagination,
 	})
 }
 

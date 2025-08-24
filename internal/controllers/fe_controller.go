@@ -286,7 +286,7 @@ func (fc *FEController) GetCourseModulesPage(c *gin.Context) {
 			"StatusCode": http.StatusInternalServerError})
 	}
 
-	modules, err := fc.ms.GetModules(*user, courseID, models.PaginationQuery{})
+	modules, _, err := fc.ms.GetModules(*user, courseID, models.PaginationQuery{})
 	if err != nil {
 		c.HTML(http.StatusBadRequest, "error.html", gin.H{
 			"Message":    err.Error(),
